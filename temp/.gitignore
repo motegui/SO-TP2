@@ -1,0 +1,20 @@
+#Binary Files
+*.bin
+*.sys
+
+#The images
+*.img
+*.qcow2
+*.vmdk
+
+#Object files
+*.o
+
+#IDEs
+.vscode
+.idea
+
+#Docker
+.bash_history
+.gdb_history
+*.elf
