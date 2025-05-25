@@ -125,7 +125,8 @@ void analizeBuffer(char * buffer, int count) {
 		sys_draw_image(diego, 100, 100);
 		playBSong();
 		sys_clear_screen();
-	} else if (count > 0) {
+	}
+	else if (count > 0) {
 		printColor("\nCommand not found. Type \"help\" for command list\n", RED);
 	}
 }

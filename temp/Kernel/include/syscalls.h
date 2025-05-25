@@ -33,4 +33,17 @@ static void sys_get_ticks(uint64_t ticks);
 
 static void sys_draw_image(uint64_t image, uint64_t width, uint64_t height);
 
+static void sys_nice_process(uint64_t pid, uint64_t new_priority);
+
+static void sys_block_process(uint64_t pid);
+
+static void sys_unblock_process(uint64_t pid);
+
+static void sys_yield();
+
+static void sys_wait_for_children();
+
+
+
+
 #endif

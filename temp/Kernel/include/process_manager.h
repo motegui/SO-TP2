@@ -64,4 +64,16 @@ PCB *create_idle_process();
 
 PCB *get_idle_pcb();
 
+void nice_process(int pid, int new_priority);
+
+void block_process(int pid);
+
+void unblock_process(int pid);
+
+void yield();
+
+void wait_for_children();
+
+void exit_process();
+
 #endif 

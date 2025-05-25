@@ -6,6 +6,8 @@
 #include <clock.h>
 #include <sound.h>
 #include <time.h>
+#include <process_manager.h>
+#include <scheduler.h>
 
 extern const uint64_t registers[17];
 
@@ -53,6 +55,35 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
         case 13:
             sys_draw_image(arg0, arg1, arg2);
             break;
+        case 14:
+            return sys_create_process((char *) arg0, (int) arg1, (int) arg2, (bool) arg3);
+        case 15:
+            sys_exit_process();
+            break;
+        case 16:
+            return sys_get_pid();
+        case 17:
+            sys_list_processes((char *) arg0, (uint64_t) arg1);
+            break;
+        case 18:
+            sys_kill_process((int) arg0);
+            break;
+        case 19:
+            sys_nice_process(arg0, arg1);
+            break;
+        case 20:
+            sys_block_process(arg0);
+            break;
+        case 21:
+            sys_unblock_process(arg0);
+            break;
+        case 22:
+            sys_yield();
+            break;
+        case 23:
+            sys_wait_for_children();
+            break;
+
     }
     //ver de agregar excepción si no existe el id
 }
@@ -141,4 +172,31 @@ static void sys_get_ticks(uint64_t ticks) {
 
 static void sys_draw_image(uint64_t image, uint64_t width, uint64_t height) {
     drawImage((const unsigned long int *) image, (int) width, (int) height);
+}
+
+
+static void sys_nice_process(uint64_t pid, uint64_t new_priority){
+    nice_process((int)pid, (int)new_priority);
+}
+
+static void sys_block_process(uint64_t pid){
+    block_process((int)pid);
+}
+
+static void sys_unblock_process(uint64_t pid){
+    unblock_process((int)pid);
+}
+
+// el proceso actual renuncia al CPU
+static void sys_yield() {
+    yield();
+}
+
+static void sys_exit_process() {
+    exit_process();
+}
+
+
+static void sys_wait_for_children(){
+    wait_for_children();
 }

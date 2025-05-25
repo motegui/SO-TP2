@@ -168,6 +168,68 @@ PCBNode *find_node_by_pid(int pid) {
     return NULL;
 }
 
+void nice_process(int pid, int new_priority){
+    PCB * target = get_process_by_pid((int) pid);
+    if(!target ||(int) new_priority < 0){
+        return;
+    }
+    set_process_priority(target, (int) new_priority);
+
+}
+
+void block_process(int pid){
+    PCB * target = get_process_by_pid((int) pid);
+    if(!target || target->state == TERMINATED){
+        return;
+    }
+    set_process_state(target, BLOCKED);
+}
+
+void unblock_process(int pid){
+    PCB * target = get_process_by_pid((int) pid);
+    if(!target || target->state == TERMINATED){
+        return;
+    }
+    set_process_state(target, READY);
+}
+
+void yield() {
+    PCB *current = get_current_process();
+    set_process_state(current, READY);
+    schedule();
+}
+
+void wait_for_children(){
+    PCB * current_proc = get_current_process();
+
+    while(1){
+        int any_alive = 0;
+        PCBNode * curr = get_active_process_list();
+
+        while(curr){
+            PCB * child = curr->pcb;
+            if(child->parent_pid == current_proc->pid && child->state != TERMINATED){
+                any_alive = 1;
+                break;
+            }
+            curr->next;
+        }
+
+        if(!any_alive){
+            return;
+        }
+        yield(); //cedo el paso a otro proceso
+    }
+}
+
+void exit_process(){
+    PCB *current = get_current_process();
+    if (current) {
+        remove_active_process(current->pid);
+        schedule();
+    }
+}
+
 void test_process_manager() {
     PCB *p1 = create_process("proc1", 0, 1, true);
     PCB *p2 = create_process("proc2", 0, 2, false);
