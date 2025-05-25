@@ -1,18 +1,8 @@
 #include "mm_manager.h"
 #include <string.h>
 
-typedef struct Block {
-	void *address;
-	size_t size;
-	bool is_free;
-	struct Block *next;
-} Block;
+MemoryManagerADT globalMemoryManager = NULL;
 
-typedef struct MemoryManagerCDT {
-	char *nextAddress;
-	char *endAddress;
-	Block *blockList;
-} MemoryManagerCDT;
 
 MemoryManagerADT createMemoryManager(void *const restrict memoryForMemoryManager, void *const restrict managedMemory, size_t managedSize) {
 	MemoryManagerADT memoryManager = (MemoryManagerADT) memoryForMemoryManager;

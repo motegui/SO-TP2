@@ -4,7 +4,23 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+typedef struct Block {
+	void *address;
+	size_t size;
+	bool is_free;
+	struct Block *next;
+} Block;
+
+typedef struct MemoryManagerCDT {
+	char *nextAddress;
+	char *endAddress;
+	Block *blockList;
+} MemoryManagerCDT;
+
 typedef struct MemoryManagerCDT *MemoryManagerADT;
+
+extern MemoryManagerADT globalMemoryManager;
+
 
 MemoryManagerADT createMemoryManager(void *const restrict memoryForMemoryManager, void *const restrict managedMemory, size_t managedSize);
 

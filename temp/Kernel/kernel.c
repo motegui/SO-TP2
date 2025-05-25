@@ -8,6 +8,13 @@
 #include <sound.h>
 #include <colors.h>
 #include <homero.h>
+#include <mm_manager.h>
+
+// Elegí un lugar libre de la memoria del kernel, por ejemplo:
+#define MANAGER_STRUCT_SIZE  sizeof(struct MemoryManagerCDT)
+#define MANAGED_MEMORY_SIZE  0x100000  // 1 MiB, ajustá si necesitás más
+
+
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -22,6 +29,7 @@ static const uint64_t PageSize = 0x1000;
 
 static void * const sampleCodeModuleAddress = (void*)0x400000;
 static void * const sampleDataModuleAddress = (void*)0x500000;
+
 
 typedef int (*EntryPoint)();
 
@@ -54,7 +62,13 @@ void * initializeKernelBinary()
 int main()
 {	
 	load_idt(); //Setup idt before terminal runs
-	
+
+	globalMemoryManager = createMemoryManager(
+		(void*)0x800000, // Memory for the memory manager structure
+		(void*)0x801000, // Memory for the managed memory
+		MANAGED_MEMORY_SIZE
+	);
+
 	drawImage(homero, 100, 100);
 	printStringColor("Press any key to start. If not found, press CTRRRRL \n\n", YELLOW);
 	playSimpsons();

@@ -1,44 +1,44 @@
-/*
-1. Estructura PCB ( guardar toda la info de un proceso)
-2.Funciones para crear y destruir procesos
-3. Funciones para modificar procesos
-4.Lista de procesos activos
-5. Iniciar el proceso que tiene que correr cuando no hay nada mas que ejecutar (idle)
-*/
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #include "include/process_manager.h"
+#include "include/naiveConsole.h"  // Para ncPrint si necesitás imprimir
 
-typedef struct PCBNode {
-    PCB *pcb;
-    struct PCBNode *next;
-} PCBNode;
+extern MemoryManagerADT globalMemoryManager;
 
 static PCBNode *active_processes = NULL;
 static PCB *current_process = NULL;
+static int next_pid = 1;
 
-static int next_pid = 1; // PID incremental
+// Función auxiliar para duplicar cadenas sin strdup
+char *strdup_kernel(const char *src) {
+    size_t len = 0;
+    while (src[len]) len++;
 
-// Crear un nuevo proceso
+    char *dest = allocMemory(globalMemoryManager, len + 1);
+    if (!dest) return NULL;
+
+    for (size_t i = 0; i <= len; i++) {
+        dest[i] = src[i];
+    }
+
+    return dest;
+}
+
 PCB *create_process(const char *name, int parent_pid, int priority, bool foreground) {
-    PCB *pcb = malloc(sizeof(PCB));
+    PCB *pcb = allocMemory(globalMemoryManager, sizeof(PCB));
     if (!pcb) return NULL;
 
     pcb->pid = next_pid++;
     pcb->parent_pid = parent_pid;
     pcb->state = NEW;
-    pcb->name = strdup(name);
+    pcb->name = strdup_kernel(name);
     pcb->priority = priority;
     pcb->foreground = foreground;
     pcb->ticks = 0;
 
-    // Asignar stack (ejemplo: 8KB)
-    pcb->stack_base = malloc(8192);
+    // Asignar stack (8KB)
+    pcb->stack_base = allocMemory(globalMemoryManager, 8192);
     if (!pcb->stack_base) {
-        free(pcb->name);
-        free(pcb);
+        freeMemory(globalMemoryManager, pcb->name);
+        freeMemory(globalMemoryManager, pcb);
         return NULL;
     }
 
@@ -48,37 +48,32 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     return pcb;
 }
 
-// Cambiar estado del proceso
 void set_process_state(PCB *pcb, ProcessState new_state) {
     if (pcb) {
         pcb->state = new_state;
     }
 }
 
-// Cambiar prioridad
 void set_process_priority(PCB *pcb, int new_priority) {
     if (pcb) {
         pcb->priority = new_priority;
     }
 }
 
-// Cambiar nombre
 void set_process_name(PCB *pcb, const char *new_name) {
     if (pcb && new_name) {
-        free(pcb->name);
-        pcb->name = strdup(new_name);
+        freeMemory(globalMemoryManager, pcb->name);
+        pcb->name = strdup_kernel(new_name);
     }
 }
 
-// Agregar a la lista de procesos activos
 void add_active_process(PCB *pcb) {
-    PCBNode *node = malloc(sizeof(PCBNode));
+    PCBNode *node = allocMemory(globalMemoryManager, sizeof(PCBNode));
     node->pcb = pcb;
     node->next = active_processes;
     active_processes = node;
 }
 
-// Eliminar un proceso de la lista por PID
 void remove_active_process(int pid) {
     PCBNode **curr = &active_processes;
     while (*curr) {
@@ -86,41 +81,44 @@ void remove_active_process(int pid) {
             PCBNode *to_delete = *curr;
             *curr = (*curr)->next;
             destroy_process(to_delete->pcb);
-            free(to_delete);
+            freeMemory(globalMemoryManager, to_delete);
             return;
         }
         curr = &((*curr)->next);
     }
 }
 
-// Listar procesos activos
 void print_active_processes() {
     PCBNode *curr = active_processes;
     const char *state_str[] = {"NEW", "READY", "RUNNING", "BLOCKED", "TERMINATED"};
 
-    printf("PID\tNombre\t\tEstado\t\tPrioridad\tFG/BG\n");
+    ncPrint("PID\tNombre\t\tEstado\t\tPrioridad\tFG/BG\n");
     while (curr) {
         PCB *pcb = curr->pcb;
-        printf("%d\t%s\t\t%s\t\t%d\t\t%s\n",
-               pcb->pid,
-               pcb->name,
-               state_str[pcb->state],
-               pcb->priority,
-               pcb->foreground ? "FG" : "BG");
+
+        ncPrintDec(pcb->pid);
+        ncPrint("\t");
+        ncPrint(pcb->name);
+        ncPrint("\t\t");
+        ncPrint(state_str[pcb->state]);
+        ncPrint("\t\t");
+        ncPrintDec(pcb->priority);
+        ncPrint("\t\t");
+        ncPrint(pcb->foreground ? "FG" : "BG");
+        ncPrint("\n");
+
         curr = curr->next;
     }
 }
 
-// Liberar memoria del proceso
 void destroy_process(PCB *pcb) {
     if (!pcb) return;
     pcb->state = TERMINATED;
-    free(pcb->name);
-    free(pcb->stack_base);
-    free(pcb);
+    freeMemory(globalMemoryManager, pcb->name);
+    freeMemory(globalMemoryManager, pcb->stack_base);
+    freeMemory(globalMemoryManager, pcb);
 }
 
-// Buscar proceso por PID
 PCB *get_process_by_pid(int pid) {
     PCBNode *curr = active_processes;
     while (curr) {
@@ -132,24 +130,44 @@ PCB *get_process_by_pid(int pid) {
     return NULL;
 }
 
-// Obtener el proceso actualmente en ejecución
 PCB *get_current_process() {
     return current_process;
 }
 
-// Establecer el proceso actual (usado por el scheduler)
 void set_current_process(PCB *pcb) {
     current_process = pcb;
 }
 
-// Proceso idle (cuando no hay nada para ejecutar)
+PCBNode *get_active_process_list() {
+    return active_processes;
+}
+
 void idle_process() {
     while (1) {
         __asm__("hlt");
     }
 }
 
-// Prueba básica (opcional)
+PCB *get_idle_pcb() {
+    static PCB idle;
+    idle.pid = -1;
+    idle.name = "idle";
+    idle.priority = 0;
+    idle.state = READY;
+    return &idle;
+}
+
+PCBNode *find_node_by_pid(int pid) {
+    PCBNode *curr = active_processes;
+    while (curr) {
+        if (curr->pcb && curr->pcb->pid == pid) {
+            return curr;
+        }
+        curr = curr->next;
+    }
+    return NULL;
+}
+
 void test_process_manager() {
     PCB *p1 = create_process("proc1", 0, 1, true);
     PCB *p2 = create_process("proc2", 0, 2, false);
