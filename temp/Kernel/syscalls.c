@@ -61,7 +61,8 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_exit_process();
             break;
         case 16:
-            return sys_get_pid();
+             sys_get_pid();
+             break;
         case 17:
             sys_list_processes((char *) arg0, (uint64_t) arg1);
             break;
@@ -160,12 +161,12 @@ static void sys_get_screensize(uint64_t width, uint64_t height) {
     *w = getWidth();
     *h = getHeight();
 }
-static int64_t sys_create_process(char *name, int priority, int foreground, bool detached) {
-    return create_process(name, priority, foreground, detached);
+static void sys_create_process(char *name, int priority, int foreground, bool detached) {
+    create_process(name, priority, foreground, detached);
 }
 
-static int64_t sys_get_pid() {
-    return get_pid();
+static void sys_get_pid() {
+    get_pid();
 }
 
 static void sys_list_processes(char *buffer, uint64_t length) {

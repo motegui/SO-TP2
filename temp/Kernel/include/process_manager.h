@@ -5,6 +5,8 @@
 
 #include <stdbool.h>
 #include "mm_manager.h"
+#include <stdint.h>
+#include <unistd.h>
 
 typedef enum {
     NEW,
@@ -75,5 +77,11 @@ void yield();
 void wait_for_children();
 
 void exit_process();
+
+void kill_process(int pid);
+
+void get_pid();
+
+void list_processes(char *buffer, uint64_t length);
 
 #endif 

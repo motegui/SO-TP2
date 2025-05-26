@@ -2,6 +2,8 @@
 #define SYSCALLS_H
 
 #include <stdint.h>
+#include <stdbool.h>
+
 
 void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
 
@@ -42,6 +44,11 @@ static void sys_unblock_process(uint64_t pid);
 static void sys_yield();
 
 static void sys_wait_for_children();
+static void sys_get_pid();
+static void sys_list_processes(char *buffer, uint64_t length);
+static void sys_kill_process(int pid);
+static void sys_create_process(char *name, int priority, int foreground, bool detached);
+static void sys_exit_process();
 
 
 
