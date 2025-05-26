@@ -4,6 +4,6 @@ LD=ld
 AR=ar
 ASM=nasm
 
-GCCFLAGS=-m64 -fno-exceptions -std=c99 -Wall -ffreestanding -nostdlib -fno-common   -fno-builtin-malloc -fno-builtin-free -fno-builtin-realloc -g
+GCCFLAGS= -fno-exceptions -std=c99 -Wall -ffreestanding -nostdlib -fno-common   -fno-builtin-malloc -fno-builtin-free -fno-builtin-realloc -g
 ARFLAGS=rvs
 ASMFLAGS=-felf64
