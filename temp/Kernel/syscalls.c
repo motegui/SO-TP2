@@ -81,7 +81,7 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_yield();
             break;
         case 23:
-            sys_wait_for_children();
+            sys_wait_for_children(); //done pero habria que chequearla
             break;
 
     }
@@ -159,6 +159,21 @@ static void sys_get_screensize(uint64_t width, uint64_t height) {
     uint16_t * h = (uint16_t *) height;
     *w = getWidth();
     *h = getHeight();
+}
+static int64_t sys_create_process(char *name, int priority, int foreground, bool detached) {
+    return create_process(name, priority, foreground, detached);
+}
+
+static int64_t sys_get_pid() {
+    return get_pid();
+}
+
+static void sys_list_processes(char *buffer, uint64_t length) {
+    list_processes(buffer, length);
+}
+
+static void sys_kill_process(int pid) {
+    kill_process(pid);
 }
 
 static void sys_toggle_cursor() {
