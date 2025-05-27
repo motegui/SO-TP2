@@ -246,6 +246,7 @@ void moveCursor() {
 	}
 }
 
+
 void eraseCursor() {
 	if (showCursor) {
 		for (int i = line * CHAR_HEIGHT; i < (line + 1) * CHAR_HEIGHT; i++) {

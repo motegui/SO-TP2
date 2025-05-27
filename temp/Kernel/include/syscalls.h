@@ -49,6 +49,10 @@ static void sys_list_processes(char *buffer, uint64_t length);
 static void sys_kill_process(int pid);
 static void sys_create_process(char *name, int priority, int foreground, bool detached);
 static void sys_exit_process();
+static uint64_t sys_malloc(uint64_t size);
+static int64_t sys_free(uint64_t ptr);
+static void sys_get_mem_status(uint64_t *used, uint64_t *free);
+
 
 
 

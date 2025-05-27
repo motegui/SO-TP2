@@ -8,6 +8,7 @@
 #include <time.h>
 #include <process_manager.h>
 #include <scheduler.h>
+#include <mm_manager.h>
 
 extern const uint64_t registers[17];
 
@@ -70,7 +71,7 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_kill_process((int) arg0);
             break;
         case 19:
-            sys_nice_process(arg0, arg1);
+            sys_nice_process(arg0, arg1); //change priority
             break;
         case 20:
             sys_block_process(arg0);
@@ -84,6 +85,17 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
         case 23:
             sys_wait_for_children(); //done pero habria que chequearla
             break;
+       case 24:
+            return sys_malloc(arg0);
+
+        case 25:
+            return sys_free((void *) arg0);     // Liberar memoria (arg0 = ptr) //puntero a chequear
+            break;
+        case 26:
+            sys_get_mem_status((size_t *) arg0, (size_t *) arg1);
+            break;
+
+
 
     }
     //ver de agregar excepción si no existe el id
@@ -146,6 +158,7 @@ static void sys_get_date(uint64_t buffer) {
 static void sys_clear_screen() {
     clearScreen();
 }
+
 
 static void sys_draw_rect(uint64_t x, uint64_t y, uint64_t width, uint64_t height, uint64_t color) {
     drawRect( (int) x, (int) y, (int) width, (int) height, (int) color );
@@ -215,4 +228,16 @@ static void sys_exit_process() {
 
 static void sys_wait_for_children(){
     wait_for_children();
+}
+
+static uint64_t sys_malloc(uint64_t size) {
+    return (uint64_t) allocMemory(globalMemoryManager, (uint64_t) size);
+}
+
+static int64_t sys_free(uint64_t ptr) {
+    return freeMemory(globalMemoryManager, (void *) ptr);
+}
+
+static void sys_get_mem_status(uint64_t *used, uint64_t *free) {
+    getMemoryStatus(globalMemoryManager, used, free);
 }
