@@ -87,7 +87,6 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             break;
        case 24:
             return sys_malloc(arg0);
-
         case 25:
             return sys_free((void *) arg0);     // Liberar memoria (arg0 = ptr) //puntero a chequear
             break;

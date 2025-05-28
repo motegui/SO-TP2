@@ -31,4 +31,32 @@ uint64_t sys_write_place(unsigned int fd, const char* buffer, unsigned int size,
 
 uint64_t sys_draw_image(const unsigned long * image, int width, int height);
 
+uint64_t sys_create_process(char *name, int priority, int foreground, int detached);
+
+void sys_exit_process();
+
+uint64_t sys_get_pid();
+
+void sys_list_processes(char *buffer, uint64_t length);
+
+void sys_kill_process(int pid);
+
+void sys_nice_process(uint64_t pid, uint64_t new_priority);
+
+void sys_block_process(uint64_t pid);
+
+void sys_unblock_process(uint64_t pid);
+
+void sys_yield();
+
+void sys_wait_for_children();
+
+void *sys_malloc(uint64_t size);
+
+int64_t sys_free(void *ptr);
+
+void sys_get_mem_status(uint64_t *used, uint64_t *free);
+
+
+
 #endif
