@@ -1,11 +1,8 @@
 #include "include/process_manager.h"
 #include "include/naiveConsole.h"  // Para ncPrint si necesitás imprimir
-
-
 #include <stdarg.h>
 #include <stdint.h>
 
-//hola
 
 int int_to_str(int value, char *str) {
     char temp[12];
@@ -337,23 +334,30 @@ void get_pid() {
 }
 
 void list_processes(char *buffer, uint64_t length) {
+    static const char *state_str[] = {"NEW", "READY", "RUNNING", "BLOCKED", "TERMINATED"};
     PCBNode *curr = active_processes;
     int offset = 0;
 
-    while (curr && offset < length - 1) {
+    while (curr && offset < (int)length - 1) {
         PCB *pcb = curr->pcb;
-        int written = snprintf(buffer + offset, length - offset, "PID: %d, Name: %s, State: %d, Priority: %d\n",
-                               pcb->pid, pcb->name, pcb->state, pcb->priority);
-        if (written < 0 || written >= length - offset) {
-            break; // No hay espacio suficiente
+        const char *state = (pcb->state >= 0 && pcb->state <= 4) ? state_str[pcb->state] : "UNKNOWN";
+        int written = snprintf(
+            buffer + offset, length - offset,
+            "PID: %d, Name: %s, State: %s, Priority: %d\n",
+            pcb->pid, pcb->name, state, pcb->priority
+        );
+        if (written < 0 || written >= (int)(length - offset)) {
+            buffer[length - 1] = '\0';
+            return;
         }
         offset += written;
         curr = curr->next;
     }
 
-    if (offset < length) {
-        buffer[offset] = '\0'; // Asegurar que el buffer esté terminado en nulo
-    }
+    if (offset < (int)length)
+        buffer[offset] = '\0';
+    else
+        buffer[length - 1] = '\0';
 }
 
 void test_process_manager() {

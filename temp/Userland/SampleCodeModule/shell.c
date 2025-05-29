@@ -7,20 +7,58 @@
 #include <pong.h>
 #include <shell.h>
 
-#define COMMANDS_QUANTITY 9
+#define COMMANDS_QUANTITY 15
 
-static char * commandsNames[] = {"help", "time", "date", "registers", "fillregs", "div0", "invalidop", "pong", "clear"};
+int sscanf(const char *str, const char *format, int *a, int *b) {
+    if (format[0] == '%' && format[1] == 'd' && format[2] == ' ' && format[3] == '%' && format[4] == 'd') {
+        int i = 0, sign = 1, val = 0, count = 0;
+        //primer numero
+        while (*str == ' ' || *str == '\t') str++;
+        if (*str == '-') { sign = -1; str++; }
+        while (*str >= '0' && *str <= '9') {
+            val = val * 10 + (*str - '0');
+            str++;
+        }
+        *a = sign * val;
+        count++;
+        //segundo numero
+        while (*str == ' ' || *str == '\t') str++;
+        sign = 1; val = 0;
+        if (*str == '-') { sign = -1; str++; }
+        if (*str < '0' || *str > '9') return count;
+        while (*str >= '0' && *str <= '9') {
+            val = val * 10 + (*str - '0');
+            str++;
+        }
+        *b = sign * val;
+        count++;
+        return count;
+    }
+    return 0;
+}
+
+
+static char *commandsNames[] = {
+    "help", "time", "date", "registers", "fillregs", "div0", "invalidop", "pong", "clear",
+    "getmemstatus", "ps", "kill", "nice", "block", "unblock"
+};
 
 static char *commands[] = {
-	"\thelp: gives you a list of all existent commands.\n",
-	"\ttime: prints the time of the OS.\n",
-	"\tdate: prints the date of the OS.\n",
-	"\tregisters: print the state of the registers at the time you screenshot them with CTRL key.\n",
-	"\tfillregs: fill the registers with stepped values for testing.\n",
-	"\tdiv0: divide by zero to trigger exception\n",
-	"\tinvalidop: trigger invalid operation code exception\n",
-	"\tpong: go to play the \"pong\" game.\n",
-	"\tclear: clears the OS screen.\n"
+    "\thelp: gives you a list of all existent commands.\n",
+    "\ttime: prints the time of the OS.\n",
+    "\tdate: prints the date of the OS.\n",
+    "\tregisters: print the state of the registers at the time you screenshot them with CTRL key.\n",
+    "\tfillregs: fill the registers with stepped values for testing.\n",
+    "\tdiv0: divide by zero to trigger exception\n",
+    "\tinvalidop: trigger invalid operation code exception\n",
+    "\tpong: go to play the \"pong\" game.\n",
+    "\tclear: clears the OS screen.\n",
+    "\tgetmemstatus: shows used and free memory.\n",
+    "\tps: lists all active processes.\n",
+    "\tkill <pid>: kills the process with the given pid.\n",
+    "\tnice <pid> <priority>: changes the priority of the process.\n",
+    "\tblock <pid>: blocks the process with the given pid.\n",
+    "\tunblock <pid>: unblocks the process with the given pid.\n"
 };
 
 void shell() {
@@ -125,8 +163,36 @@ void analizeBuffer(char * buffer, int count) {
 		sys_draw_image(diego, 100, 100);
 		playBSong();
 		sys_clear_screen();
-	}
-	else if (count > 0) {
+	} else if (commandMatch(buffer, "getmemstatus", count)) {
+    	uint64_t used = 0, free = 0;
+    	sys_get_mem_status(&used, &free);
+    	printfColor("\nMemory used: %d bytes\n", YELLOW, used);
+    	printfColor("Free Memory: %d bytes\n", YELLOW, free);
+	} else if (commandMatch(buffer, "ps", count)) {
+    	char procs[1024] = {0};
+    	sys_list_processes(procs, sizeof(procs));
+    	printfColor("\nActive processes:\n%s\n", CYAN, procs);
+	} else if (commandMatch(buffer, "kill", 4) && count > 5 && buffer[4] == ' ') {
+		int pid = atoi(buffer + 5);
+		sys_kill_process(pid);
+		printfColor("Killing process... %d\n", RED, pid);
+	} else if (commandMatch(buffer, "nice", 4) && count > 7 && buffer[4] == ' ') {
+		int pid, prio;
+		if (sscanf(buffer + 5, "%d %d", &pid, &prio) == 2) {
+			sys_nice_process(pid, prio);
+			printfColor("Priority changed from %d to %d\n", YELLOW, pid, prio);
+		} else {
+			printfColor("Use: nice <pid> <new_priority>\n", RED);
+		}
+	} else if (commandMatch(buffer, "block", 5) && count > 6 && buffer[5] == ' ') {
+		int pid = atoi(buffer + 6);
+		sys_block_process(pid);
+		printfColor("Process %d blocked\n", YELLOW, pid);
+	} else if (commandMatch(buffer, "unblock", 7) && count > 8 && buffer[7] == ' ') {
+		int pid = atoi(buffer + 8);
+		sys_unblock_process(pid);
+		printfColor("Process %d unlocked\n", YELLOW, pid);
+	} else if (count > 0) {
 		printColor("\nCommand not found. Type \"help\" for command list\n", RED);
 	}
 }
