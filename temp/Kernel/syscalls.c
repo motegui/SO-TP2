@@ -240,3 +240,22 @@ static int64_t sys_free(uint64_t ptr) {
 static void sys_get_mem_status(uint64_t *used, uint64_t *free) {
     getMemoryStatus(globalMemoryManager, used, free);
 }
+ //hay que agregar crear, abrir, cerrar, wait y post
+static int64_t sys_sem_create(uint64_t  semName, uint64_t  in_value){
+    return (int64_t) semCreate((char*) semName, (int) in_value);
+}
+static int64_t sys_sem_open(uint64_t  semName) {
+    return (int64_t) semOpen((char *) semName);
+}
+
+static int64_t sys_sem_close(uint64_t  semName) {
+    return (int64_t) semClose((char *) semName);
+}
+
+static int64_t sys_sem_wait(uint64_t  semName) {
+    return (int64_t) semWait((char *) semName);
+}
+
+static int64_t sys_sem_post(uint64_t  semName) {
+    return (int64_t) semPost((char *) semName);
+}

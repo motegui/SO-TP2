@@ -6,8 +6,10 @@
 #include <boca.h>
 #include <pong.h>
 #include <shell.h>
+#include <tests.h>
+#define COMMANDS_QUANTITY (sizeof(commandsNames) / sizeof(char *))
+char * testmmArgs[3];
 
-#define COMMANDS_QUANTITY 15
 
 int sscanf(const char *str, const char *format, int *a, int *b) {
     if (format[0] == '%' && format[1] == 'd' && format[2] == ' ' && format[3] == '%' && format[4] == 'd') {
@@ -40,7 +42,7 @@ int sscanf(const char *str, const char *format, int *a, int *b) {
 
 static char *commandsNames[] = {
     "help", "time", "date", "registers", "fillregs", "div0", "invalidop", "pong", "clear",
-    "getmemstatus", "ps", "kill", "nice", "block", "unblock"
+    "getmemstatus", "ps", "kill", "nice", "block", "unblock", "testmm", "sem_create", "sem_open", "sem_close", "sem_wait", "sem_post"
 };
 
 static char *commands[] = {
@@ -58,7 +60,13 @@ static char *commands[] = {
     "\tkill <pid>: kills the process with the given pid.\n",
     "\tnice <pid> <priority>: changes the priority of the process.\n",
     "\tblock <pid>: blocks the process with the given pid.\n",
-    "\tunblock <pid>: unblocks the process with the given pid.\n"
+    "\tunblock <pid>: unblocks the process with the given pid.\n",
+	"\ttestmm: test memory manager.\n",
+	"\tsem_create <name> <value>: creates a new semaphore.\n",
+    "\tsem_open <name>: opens an existing semaphore.\n",
+    "\tsem_close <name>: closes an open semaphore.\n",
+    "\tsem_wait <name>: does wait (P operation) on semaphore.\n",
+    "\tsem_post <name>: does signal (V operation) on semaphore.\n"
 };
 
 void shell() {
@@ -192,7 +200,44 @@ void analizeBuffer(char * buffer, int count) {
 		int pid = atoi(buffer + 8);
 		sys_unblock_process(pid);
 		printfColor("Process %d unlocked\n", YELLOW, pid);
-	} else if (count > 0) {
+	} else if (commandMatch(buffer, "sem_create", 10) && count > 12 && buffer[10] == ' ') {
+		char *name = buffer + 11;
+		char *value_str = strchr(name, ' ');
+		if (value_str != NULL) {
+			*value_str = '\0';
+			value_str++;
+			uint64_t val = atoi(value_str);
+			sys_sem_create((uint64_t)name, val);
+			printfColor("Semaphore '%s' created with value %d\n", GREEN, name, val);
+		} else {
+			printfColor("Usage: sem_create <name> <value>\n", RED);
+		}
+	} else if (commandMatch(buffer, "sem_open", 8) && count > 9 && buffer[8] == ' ') {
+		char *name = buffer + 9;
+		sys_sem_open((uint64_t)name);
+		printfColor("Semaphore '%s' opened\n", GREEN, name);
+	} else if (commandMatch(buffer, "sem_close", 9) && count > 10 && buffer[9] == ' ') {
+		char *name = buffer + 10;
+		sys_sem_close((uint64_t)name);
+		printfColor("Semaphore '%s' closed\n", GREEN, name);
+	} else if (commandMatch(buffer, "sem_wait", 8) && count > 9 && buffer[8] == ' ') {
+		char *name = buffer + 9;
+		sys_sem_wait((uint64_t)name);
+		printfColor("Semaphore '%s' wait (P) executed\n", GREEN, name);
+	} else if (commandMatch(buffer, "sem_post", 8) && count > 9 && buffer[8] == ' ') {
+		char *name = buffer + 9;
+		sys_sem_post((uint64_t)name);
+		printfColor("Semaphore '%s' post (V) executed\n", GREEN, name);
+	}
+
+	// else if (commandMatch(buffer, "testmm", count)) {
+	// 	parseCommand(testmmArgs, buffer, 3);
+	// 	int pid = sys_create_process("testmm", testmmArgs, &test_mm, !background, fds);
+	// 	if (!background)
+	// 		sys_wait_pid(pid);
+	// 	return pid;
+	// }
+	else if (count > 0) {
 		printColor("\nCommand not found. Type \"help\" for command list\n", RED);
 	}
 }

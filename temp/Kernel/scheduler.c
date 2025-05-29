@@ -34,31 +34,34 @@ void schedule() {
 }
 
 PCB *pick_next_process() {
-    PCB *chosen = NULL;
-    int highest_priority = -1;
-
     static PCBNode *last_rr = NULL;
     PCBNode *start = last_rr ? last_rr->next : get_active_process_list();
-    PCBNode *curr = start ? start : get_active_process_list(); // en caso de NULL
+    if (!start) return NULL;
 
+    PCBNode *curr = start;
+    int max_priority = -1;
+
+    // PASO 1: Buscar la prioridad más alta entre procesos READY
     do {
-        if (curr && curr->pcb->state == READY) {
-            if (curr->pcb->priority > highest_priority) {
-                highest_priority = curr->pcb->priority;
-                chosen = curr->pcb;
-            } else if (curr->pcb->priority == highest_priority && !chosen) {
-                chosen = curr->pcb;
-            }
+        if (curr->pcb->state == READY && curr->pcb->priority > max_priority) {
+            max_priority = curr->pcb->priority;
         }
         curr = curr->next ? curr->next : get_active_process_list();
     } while (curr != start);
 
-    if (chosen) {
-        last_rr = find_node_by_pid(chosen->pid);
-    }
+    // PASO 2: Buscar desde last_rr->next al siguiente proceso READY con esa prioridad
+    curr = start;
+    do {
+        if (curr->pcb->state == READY && curr->pcb->priority == max_priority) {
+            last_rr = curr;               // Actualizamos el último elegido
+            return curr->pcb;             // Y lo devolvemos
+        }
+        curr = curr->next ? curr->next : get_active_process_list();
+    } while (curr != start);
 
-    return chosen;
+    return NULL;  // Si no hay READY, devolvemos NULL
 }
+
 
 
 void save_context(PCB *pcb) {
