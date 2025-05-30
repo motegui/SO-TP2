@@ -2,6 +2,7 @@
 #define QUEUE_H
 
 #include <stdbool.h>
+#include <mm_manager.h>
 
 typedef struct QueueNode {
     int pid;

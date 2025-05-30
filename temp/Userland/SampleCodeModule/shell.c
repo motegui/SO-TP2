@@ -202,8 +202,13 @@ void analizeBuffer(char * buffer, int count) {
 		printfColor("Process %d unlocked\n", YELLOW, pid);
 	} else if (commandMatch(buffer, "sem_create", 10) && count > 12 && buffer[10] == ' ') {
 		char *name = buffer + 11;
-		char *value_str = strchr(name, ' ');
-		if (value_str != NULL) {
+		char *value_str = name;
+
+		while (*value_str && *value_str != ' ') {
+			value_str++;
+		}
+
+		if (*value_str != 0) {
 			*value_str = '\0';
 			value_str++;
 			uint64_t val = atoi(value_str);

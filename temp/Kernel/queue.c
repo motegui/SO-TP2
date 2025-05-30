@@ -11,7 +11,7 @@ bool queue_is_empty(Queue *q) {
 }
 
 void queue_enqueue(Queue *q, int pid) {
-    QueueNode *node = malloc(sizeof(QueueNode));
+    QueueNode *node = allocMemory(globalMemoryManager, sizeof(QueueNode));
     node->pid = pid;
     node->next = NULL;
 
@@ -34,7 +34,7 @@ int queue_dequeue(Queue *q) {
     if (!q->front)
         q->rear = NULL;
 
-    free(node);
+    freeMemory(globalMemoryManager, node);
     return pid;
 }
 

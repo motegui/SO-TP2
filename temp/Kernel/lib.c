@@ -48,3 +48,30 @@ void * memcpy(void * destination, const void * source, uint64_t length)
 
 	return destination;
 }
+
+void strncpy(char * dest, const char * src) {
+	int i = 0;
+	while (src[i] != 0) {
+		dest[i] = src[i];
+		i++;
+	}
+	dest[i] = 0;
+}
+
+int strcmp(const char *str1, const char *str2) {
+	while (*str1 && (*str1 == *str2)) {
+		str1++;
+		str2++;
+	}
+	return *(const unsigned char *)str1 - *(const unsigned char *)str2;
+}
+
+char strchr(const char *s, int c) {
+    while (*s) {
+        if (*s == (char)c) {
+            return (char *)s;
+        }
+        s++;
+    }
+    return 0;
+}

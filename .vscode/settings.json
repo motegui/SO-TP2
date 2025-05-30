@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "scheduler.h": "c"
+        "scheduler.h": "c",
+        "sync.h": "c",
+        "mm_manager.h": "c"
     }
 }

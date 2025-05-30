@@ -22,9 +22,8 @@ typedef struct {
 typedef Semaphore* sem_t;
 
 sem_t semCreate(char *name, int initValue);
-int semOpen(const char *name);
-int semClose(const char *name);
-int semWait(const char *name);
-int semPost(const char *name);
-
+sem_t semOpen(const char *name);
+int semClose(sem_t sem);
+int semWait(sem_t sem);
+int semPost(sem_t sem);
 #endif
