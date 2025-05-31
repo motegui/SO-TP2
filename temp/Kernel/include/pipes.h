@@ -20,14 +20,14 @@ typedef struct {
     int open;
     uint8_t eof;
 
-    Semaphore empty_slots;
-    Semaphore filled_slots;
+    Semaphore *filled_slots;
+    Semaphore *empty_slots;
 } Pipe;
 
 void init_pipes();
 int pipe_open(const char *name);
-int pipe_write(int id, const char *src, int count);
-int pipe_read(int id, char *dest, int count);
+int pipe_write(int id, const char *src, unsigned int count);
+int pipe_read(int id, char *dest, unsigned int count);
 void pipe_close(int id);
 
 #endif
