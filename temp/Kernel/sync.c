@@ -70,10 +70,43 @@ int semClose(sem_t sem) {
 }
 
 int semWait(sem_t sem) {
+    if (sem == NULL || !sem->in_use)
+        return -1;
+
+    enter_region(&sem->lock);
+
+    if (sem->value > 0) {
+        sem->value--;
+        leave_region(&sem->lock);
+        return 0;
+    }
+
+    int pid = get_current_process()->pid;
+    
+    queue_enqueue(&sem->waiting_queue, pid);
+    block_process(pid);
+
+    leave_region(&sem->lock);
+
+    yield();
+
     return 0;
 }
 
 
 int semPost(sem_t sem){
+    if (sem == NULL || !sem->in_use)
+        return -1;
+
+    enter_region(&sem->lock);
+
+    if(!queue_is_empty(&sem->waiting_queue)){
+        int pid = queue_dequeue(&sem->waiting_queue);
+        unblock_process(pid);
+    }else{
+        sem->value++;
+    }
+    leave_region(&sem->lock);
+
     return 0;
 }

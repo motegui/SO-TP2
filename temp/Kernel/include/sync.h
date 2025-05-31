@@ -17,6 +17,8 @@ typedef struct {
     int ref_count; //cantidad de procesos que estan usando el semaforo
     Queue waiting_queue; //cola de procesos bloqueados esperando 
     bool in_use;
+    uint8_t lock; // Lock proteger la zona crítica 
+
 } Semaphore;
 
 typedef Semaphore* sem_t;
@@ -26,4 +28,8 @@ sem_t semOpen(const char *name);
 int semClose(sem_t sem);
 int semWait(sem_t sem);
 int semPost(sem_t sem);
+
+int enter_region(uint8_t *lock);
+void leave_region(uint8_t *lock);
+
 #endif

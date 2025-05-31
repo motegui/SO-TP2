@@ -3,6 +3,9 @@ GLOBAL getKey
 GLOBAL clock
 GLOBAL inb
 GLOBAL outb
+global enter_region
+global leave_region
+
 
 section .text
 	
@@ -80,3 +83,14 @@ outb:
 	mov rsp, rbp
 	pop rbp
 	ret
+
+enter_region:
+    mov eax, 1
+    xchg eax, [rdi]
+    cmp eax, 0
+    jne enter_region
+    ret
+
+leave_region:
+    mov byte [rdi], 0
+    ret
