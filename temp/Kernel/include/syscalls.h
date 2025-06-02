@@ -57,6 +57,9 @@ static int64_t sys_sem_open(uint64_t semName);
 static int64_t sys_sem_close(uint64_t semName);
 static int64_t sys_sem_wait(uint64_t semName);
 static int64_t sys_sem_post(uint64_t semName);
+static uint64_t sys_write_pipe(int pipe_id, char *buffer, int count);
+static uint64_t sys_read_pipe(int pipe_id, char *buffer, int count);
+static uint64_t sys_create_named_pipe(char * name);
 
 
 

@@ -109,14 +109,7 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             return sys_read_pipe((int) arg0, (char *) arg1, (int) arg2);
         case 34:
             return sys_write_pipe((int) arg0, (char*)arg1, (int)arg2);
-        case 35:
-            
-
-
-
-
-
-    }
+        }
 }
 
 
