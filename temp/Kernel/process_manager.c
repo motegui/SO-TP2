@@ -367,3 +367,23 @@ void test_process_manager() {
     remove_active_process(p1->pid);
     print_active_processes();
 }
+
+int waitpid(int pid) {
+    PCB *current_proc = get_current_process();
+    if (!current_proc) return -1;
+
+    PCB *target = get_process_by_pid(pid);
+    if (!target || target->parent_pid != current_proc->pid) {
+        // No existe o no es hijo del proceso actual
+        return -1;
+    }
+
+    // Esperar mientras el hijo no haya terminado
+    while (target->state != TERMINATED) {
+        yield();  // Cede CPU y sigue esperando
+        target = get_process_by_pid(pid); // Refrescamos (por si fue eliminado)
+        if (!target) break; // Ya fue eliminado
+    }
+
+    return 0;
+}

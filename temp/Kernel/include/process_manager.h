@@ -83,5 +83,6 @@ void kill_process(int pid);
 void get_pid();
 
 void list_processes(char *buffer, uint64_t length);
+int waitpid(int pid);
 
 #endif 

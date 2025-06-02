@@ -75,7 +75,8 @@ int main()
 
 	save_original_regs();
 
-	((EntryPoint)sampleCodeModuleAddress)(); //Calling sampleCodeModule's main address
-	beep();
+
+	// ((EntryPoint)sampleCodeModuleAddress)(); //Calling sampleCodeModule's main address
+	// beep();
 	return 0;
 }

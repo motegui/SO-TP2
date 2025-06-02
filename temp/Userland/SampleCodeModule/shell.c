@@ -7,6 +7,8 @@
 #include <pong.h>
 #include <shell.h>
 #include <tests.h>
+#include <stddef.h>
+#include <programs.h>
 #define COMMANDS_QUANTITY (sizeof(commandsNames) / sizeof(char *))
 char * testmmArgs[3];
 
@@ -42,7 +44,7 @@ int sscanf(const char *str, const char *format, int *a, int *b) {
 
 static char *commandsNames[] = {
     "help", "time", "date", "registers", "fillregs", "div0", "invalidop", "pong", "clear",
-    "getmemstatus", "ps", "kill", "nice", "block", "unblock", "testmm", "sem_create", "sem_open", "sem_close", "sem_wait", "sem_post"
+    "mem", "ps", "kill", "nice", "block", "unblock", "testmm", "cat", 
 };
 
 static char *commands[] = {
@@ -55,22 +57,21 @@ static char *commands[] = {
     "\tinvalidop: trigger invalid operation code exception\n",
     "\tpong: go to play the \"pong\" game.\n",
     "\tclear: clears the OS screen.\n",
-    "\tgetmemstatus: shows used and free memory.\n",
+    "\tmem: shows used and free memory.\n",
     "\tps: lists all active processes.\n",
     "\tkill <pid>: kills the process with the given pid.\n",
     "\tnice <pid> <priority>: changes the priority of the process.\n",
     "\tblock <pid>: blocks the process with the given pid.\n",
     "\tunblock <pid>: unblocks the process with the given pid.\n",
 	"\ttestmm: test memory manager.\n",
-	"\tsem_create <name> <value>: creates a new semaphore.\n",
-    "\tsem_open <name>: opens an existing semaphore.\n",
-    "\tsem_close <name>: closes an open semaphore.\n",
-    "\tsem_wait <name>: does wait (P operation) on semaphore.\n",
-    "\tsem_post <name>: does signal (V operation) on semaphore.\n"
+	"\tcat: prints stdin as it is received.\n",
+    "\tfilter: prints stdin without vowels.\n",
+    "\twc: counts the number of lines from stdin.\n",
 };
 
 void shell() {
     printColor("Welcome to HomerOS. Type \"help\" for command list\n", ORANGE);
+	printfColor("Shell PID: %d\n", GREEN, sys_get_pid());
 	printColor("\nHomerOS: $> ", GREEN);
 
 	int count = 0;	
@@ -171,7 +172,7 @@ void analizeBuffer(char * buffer, int count) {
 		sys_draw_image(diego, 100, 100);
 		playBSong();
 		sys_clear_screen();
-	} else if (commandMatch(buffer, "getmemstatus", count)) {
+	} else if (commandMatch(buffer, "mem", count)) {
     	uint64_t used = 0, free = 0;
     	sys_get_mem_status(&used, &free);
     	printfColor("\nMemory used: %d bytes\n", YELLOW, used);
@@ -200,39 +201,27 @@ void analizeBuffer(char * buffer, int count) {
 		int pid = atoi(buffer + 8);
 		sys_unblock_process(pid);
 		printfColor("Process %d unlocked\n", YELLOW, pid);
-	} else if (commandMatch(buffer, "sem_create", 10) && count > 12 && buffer[10] == ' ') {
-		char *name = buffer + 11;
-		char *value_str = name;
-
-		while (*value_str && *value_str != ' ') {
-			value_str++;
-		}
-
-		if (*value_str != 0) {
-			*value_str = '\0';
-			value_str++;
-			uint64_t val = atoi(value_str);
-			sys_sem_create((uint64_t)name, val);
-			printfColor("Semaphore '%s' created with value %d\n", GREEN, name, val);
-		} else {
-			printfColor("Usage: sem_create <name> <value>\n", RED);
-		}
-	} else if (commandMatch(buffer, "sem_open", 8) && count > 9 && buffer[8] == ' ') {
-		char *name = buffer + 9;
-		sys_sem_open((uint64_t)name);
-		printfColor("Semaphore '%s' opened\n", GREEN, name);
-	} else if (commandMatch(buffer, "sem_close", 9) && count > 10 && buffer[9] == ' ') {
-		char *name = buffer + 10;
-		sys_sem_close((uint64_t)name);
-		printfColor("Semaphore '%s' closed\n", GREEN, name);
-	} else if (commandMatch(buffer, "sem_wait", 8) && count > 9 && buffer[8] == ' ') {
-		char *name = buffer + 9;
-		sys_sem_wait((uint64_t)name);
-		printfColor("Semaphore '%s' wait (P) executed\n", GREEN, name);
-	} else if (commandMatch(buffer, "sem_post", 8) && count > 9 && buffer[8] == ' ') {
-		char *name = buffer + 9;
-		sys_sem_post((uint64_t)name);
-		printfColor("Semaphore '%s' post (V) executed\n", GREEN, name);
+	} else if (commandMatch(buffer, "cat", count)) {
+    int pid = sys_create_process("cat", 1, 1, 0); // prioridad 1, foreground, no detached
+    if (pid < 0) {
+        printfColor("Error creating cat process\n", RED);
+    } else {
+        printfColor("Cat process created with PID %d\n", GREEN, pid);
+    }
+	} else if (commandMatch(buffer, "filter", count)) {
+    	int pid = sys_create_process("filter", 1, 1, 0);
+    	if (pid < 0) {
+        	printfColor("Error creating filter process\n", RED);
+    	} else {
+        	printfColor("Filter process created with PID %d\n", GREEN, pid);
+    	}
+	} else if (commandMatch(buffer, "wc", count)) {
+    	int pid = sys_create_process("wc", 1, 1, 0);
+    	if (pid < 0) {
+        	printfColor("Error creating wc process\n", RED);
+    	}else {
+        	printfColor("Wc process created with PID %d\n", GREEN, pid);
+    	}
 	}
 
 	// else if (commandMatch(buffer, "testmm", count)) {
@@ -242,7 +231,14 @@ void analizeBuffer(char * buffer, int count) {
 	// 		sys_wait_pid(pid);
 	// 	return pid;
 	// }
-	else if (count > 0) {
-		printColor("\nCommand not found. Type \"help\" for command list\n", RED);
+	else {
+		// Intentar ejecutar el comando como un programa userland
+		int pid = sys_create_process(buffer, 1, NULL, 0);  // 1 = foreground
+		if (pid < 0) {
+			printfColor("\nCommand not found. Type \"help\" for command list\n", RED);
+		} else {
+			sys_wait_pid(pid);  // esperar que termine si es foreground
+		}
 	}
+
 }

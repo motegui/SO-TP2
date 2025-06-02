@@ -4,6 +4,10 @@
 #include <colors.h>
 #include <uStrings.h>
 
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
 extern void fillRegs();
 
 void print(char* string) {

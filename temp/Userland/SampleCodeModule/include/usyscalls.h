@@ -67,5 +67,6 @@ int64_t sys_sem_wait(uint64_t semName);
 
 int64_t sys_sem_post(uint64_t semName);
 
+uint64_t sys_wait_pid(uint64_t pid);
 
 #endif

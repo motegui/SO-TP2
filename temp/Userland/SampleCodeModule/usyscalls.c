@@ -135,3 +135,7 @@ int64_t sys_sem_wait(uint64_t semName) {
 int64_t sys_sem_post(uint64_t semName) {
     return sys_call(31, semName, 0, 0, 0, 0);
 }
+
+uint64_t sys_wait_pid(uint64_t pid){
+    return sys_call(32, pid,0,0,0,0);
+}

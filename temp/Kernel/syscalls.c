@@ -109,6 +109,8 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             return sys_read_pipe((int) arg0, (char *) arg1, (int) arg2);
         case 34:
             return sys_write_pipe((int) arg0, (char*)arg1, (int)arg2);
+        case 35:
+        return (int64_t) sys_wait_pid(arg0);
         }
 }
 
@@ -252,6 +254,7 @@ static int64_t sys_free(uint64_t ptr) {
 static void sys_get_mem_status(uint64_t *used, uint64_t *free) {
     getMemoryStatus(globalMemoryManager, used, free);
 }
+
 static int64_t sys_sem_create(uint64_t  semName, uint64_t  in_value){
     return (int64_t) semCreate((char*) semName, (int) in_value);
 }
@@ -281,4 +284,8 @@ static uint64_t sys_read_pipe(int pipe_id, char *buffer, int count) {
 
 static uint64_t sys_write_pipe(int pipe_id, char *buffer, int count){
     return (uint64_t) pipe_write(pipe_id, buffer, count);
+}
+
+static int64_t sys_wait_pid(uint64_t pid){
+    return (int64_t) waitpid((int)pid);
 }

@@ -21,7 +21,8 @@ int main() {
 
 	sys_clear_screen();
 
-	shell();
+	// shell();
+	// sys_create_process()
 
 	return 0;
 }
