@@ -12,6 +12,8 @@ void init_pipes(){
     }
 }
 
+
+//abre el pipe si existe, y sino lo crea
 int pipe_open(const char *name){
     for (int i = 0; i < MAX_PIPES; i++) {
         if (pipe_table[i].open && strcmp(pipe_table[i].name, name) == 0) {

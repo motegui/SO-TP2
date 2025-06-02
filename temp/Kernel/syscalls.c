@@ -93,11 +93,30 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
         case 26:
             sys_get_mem_status((size_t *) arg0, (size_t *) arg1);
             break;
+        case 27:
+            return sys_sem_create(arg0, arg1);
+        case 28:
+            return sys_sem_open(arg0);      
+        case 29:
+            return sys_sem_close(arg0);        
+        case 30:
+            return sys_sem_wait(arg0);       
+        case 31:
+            return sys_sem_post(arg0);    
+        case 32:
+            return sys_create_named_pipe((char*) (arg0));
+        case 33:
+            return sys_read_pipe((int) arg0, (char *) arg1, (int) arg2);
+        case 34:
+            return sys_write_pipe((int) arg0, (char*)arg1, (int)arg2);
+        case 35:
+            
+
+
 
 
 
     }
-    //ver de agregar excepción si no existe el id
 }
 
 
@@ -240,7 +259,6 @@ static int64_t sys_free(uint64_t ptr) {
 static void sys_get_mem_status(uint64_t *used, uint64_t *free) {
     getMemoryStatus(globalMemoryManager, used, free);
 }
- //hay que agregar crear, abrir, cerrar, wait y post
 static int64_t sys_sem_create(uint64_t  semName, uint64_t  in_value){
     return (int64_t) semCreate((char*) semName, (int) in_value);
 }
@@ -258,4 +276,16 @@ static int64_t sys_sem_wait(uint64_t  semName) {
 
 static int64_t sys_sem_post(uint64_t  semName) {
     return (int64_t) semPost((char *) semName);
+}
+
+static uint64_t sys_create_named_pipe(char * name){
+    return (uint64_t) pipe_open(name);
+}
+
+static uint64_t sys_read_pipe(int pipe_id, char *buffer, int count) {
+    return (uint64_t) pipe_read(pipe_id, buffer, count); // delegás al sistema de pipes
+}
+
+static uint64_t sys_write_pipe(int pipe_id, char *buffer, int count){
+    return (uint64_t) pipe_write(pipe_id, buffer, count);
 }
