@@ -4,25 +4,13 @@
 #include <colors.h>
 #include <shell.h>
 #include <pong.h>
+#include <stddef.h>
+
+int loop_a_main(int argc, char **argv);
 
 int main() {
-	// Choose between terminal or pong
-	printColor("Welcome to HomerOS. Choose between terminal or pong (t/p): \n\n", GREEN);
-
-	unsigned char c;
-	do {
-		c = getChar();
-	} while (c != 't' && c != 'p');
-
-	getChar();
-
-	if (c == 'p')
-		pong();
-
-	sys_clear_screen();
-
-	// shell();
-	// sys_create_process()
-
-	return 0;
+    char *args[] = { "loop_a", NULL };
+    int pid = sys_create_process("loop_a", 1, 1, loop_a_main, args);
+    sys_wait_pid(pid);  // ✅ Esperar que termine el proceso hijo
+    return 0;
 }

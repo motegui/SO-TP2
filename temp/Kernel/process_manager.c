@@ -2,6 +2,7 @@
 #include "include/naiveConsole.h"  // Para ncPrint si necesitás imprimir
 #include <stdarg.h>
 #include <stdint.h>
+#include "scheduler.h"
 
 
 int int_to_str(int value, char *str) {
@@ -99,7 +100,7 @@ char *strdup_kernel(const char *src) {
     return dest;
 }
 
-PCB *create_process(const char *name, int parent_pid, int priority, bool foreground) {
+PCB *create_process(const char *name, int parent_pid, int priority, bool foreground, void *entry_point, char **args){
     PCB *pcb = allocMemory(globalMemoryManager, sizeof(PCB));
     if (!pcb) return NULL;
 
@@ -118,12 +119,31 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
         freeMemory(globalMemoryManager, pcb);
         return NULL;
     }
+    void *stack_top = (char *)pcb->stack_base + 8192;
 
-    pcb->stack_pointer = (void *)((char *)pcb->stack_base + 8192); // stack crece hacia abajo
+    pcb->stack_pointer = create_stack(stack_top, entry_point, args, process_wrapper);
+
 
     add_active_process(pcb);
     return pcb;
 }
+
+void process_wrapper(int (*entry_point)(int, char **), char **args) {
+    entry_point(0, args);
+    exit_process();
+}
+
+void *create_stack(void *stack_top, void *entry_point, char **args, void *wrapper) {
+    uint64_t *sp = (uint64_t *)stack_top;
+
+    *(--sp) = (uint64_t)exit_process;     // return addr
+    *(--sp) = (uint64_t)args;             // 2º arg: argv
+    *(--sp) = (uint64_t)0;                // 1º arg: argc
+    *(--sp) = (uint64_t)wrapper;          // ret -> wrapper
+
+    return sp;
+}
+
 
 void set_process_state(PCB *pcb, ProcessState new_state) {
     if (pcb) {
@@ -289,7 +309,7 @@ void wait_for_children(){
                 any_alive = 1;
                 break;
             }
-            curr->next;
+            curr = curr->next;
         }
 
         if(!any_alive){
@@ -360,6 +380,7 @@ void list_processes(char *buffer, uint64_t length) {
         buffer[length - 1] = '\0';
 }
 
+/*
 void test_process_manager() {
     PCB *p1 = create_process("proc1", 0, 1, true);
     PCB *p2 = create_process("proc2", 0, 2, false);
@@ -367,6 +388,7 @@ void test_process_manager() {
     remove_active_process(p1->pid);
     print_active_processes();
 }
+*/
 
 int waitpid(int pid) {
     PCB *current_proc = get_current_process();

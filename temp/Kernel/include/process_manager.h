@@ -34,7 +34,11 @@ typedef struct PCBNode {
     struct PCBNode *next;
 } PCBNode;
 
-PCB *create_process(const char *name, int parent_pid, int priority, bool foreground);
+PCB *create_process(const char *name, int parent_pid, int priority, bool foreground, void *entry_point, char **args);
+
+void process_wrapper(int (*entry_point)(int, char **), char **args);
+
+void *create_stack(void *stack_top, void *entry_point, char **args, void *wrapper);
 
 void set_process_state(PCB *pcb, ProcessState new_state);
 

@@ -63,8 +63,9 @@ uint64_t sys_draw_image(const unsigned long * image, int width, int height) {
     return sys_call((uint64_t) 13, (uint64_t) image, (uint64_t) width, (uint64_t) height, (uint64_t) 0, (uint64_t) 0);
 }
 
-uint64_t sys_create_process(char *name, int priority, int foreground, int detached) {
-    return sys_call(14, (uint64_t)name, (uint64_t)priority, (uint64_t)foreground, (uint64_t)detached, 0);
+uint64_t sys_create_process(char *name, int priority, int foreground, void *entry_point, char **args) {
+    return sys_call(14, (uint64_t)name, (uint64_t)priority, (uint64_t)foreground,
+                    (uint64_t)entry_point, (uint64_t)args);
 }
 
 void sys_exit_process() {

@@ -69,14 +69,17 @@ int main()
 		MANAGED_MEMORY_SIZE
 	);
 
-	drawImage(homero, 100, 100);
-	printStringColor("Press any key to start. If not found, press CTRRRRL \n\n", YELLOW);
-	playSimpsons();
-
-	save_original_regs();
 
 
-	// ((EntryPoint)sampleCodeModuleAddress)(); //Calling sampleCodeModule's main address
+
+	((EntryPoint)sampleCodeModuleAddress)(); //Calling sampleCodeModule's main address
+	
+	schedule();
+
+
+	while (1) {
+		printChar('H', 100, 100, (Color){255, 255, 255});  // blanco
+	}
 	// beep();
 	return 0;
 }

@@ -31,7 +31,7 @@ uint64_t sys_write_place(unsigned int fd, const char* buffer, unsigned int size,
 
 uint64_t sys_draw_image(const unsigned long * image, int width, int height);
 
-uint64_t sys_create_process(char *name, int priority, int foreground, int detached);
+uint64_t sys_create_process(char *name, int priority, int foreground, void *entry_point, char **args);
 
 void sys_exit_process();
 
