@@ -136,17 +136,31 @@ void *create_stack(void *stack_top, void *entry_point, char **args, void *wrappe
     sp = (uint64_t *)((uint64_t)sp & ~0xF);
 
     // Armamos la pila para que al hacer ret salte a wrapper(entry_point, args)
-    *(--sp) = (uint64_t)wrapper;      // RIP (dirección de retorno)
-    *(--sp) = (uint64_t)entry_point;  // RDI (primer argumento)
-    *(--sp) = (uint64_t)args;         // RSI (segundo argumento)
+*(--sp) = 0;                       // RBP
+*(--sp) = (uint64_t)wrapper;      // RIP
+*(--sp) = (uint64_t)entry_point;  // custom: lo leemos dentro del wrapper
+*(--sp) = (uint64_t)args;         // custom: lo leemos dentro del wrapper
+
 
     return sp;
 }
 
-void process_wrapper(int (*entry_point)(int, char **), char **args) {
+void process_wrapper() {
+    for (int i = 0; i < 20; i++) {
+        ncPrint(" wrapper\n");
+    }
+
+    uint64_t *sp;
+    __asm__ volatile("mov %%rsp, %0" : "=g"(sp));
+
+    void (*entry_point)(int, char **) = (void (*)(int, char **)) sp[1];
+    char **args = (char **) sp[0];
+
     entry_point(1, args);
     exit_process();
 }
+
+
 
 void set_process_state(PCB *pcb, ProcessState new_state) {
     if (pcb) {

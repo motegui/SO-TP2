@@ -3,14 +3,13 @@
 #include <usyscalls.h>
 #include <colors.h>
 #include <shell.h>
-#include <pong.h>
 #include <stddef.h>
 
-int loop_a_main(int argc, char **argv);
+void shell();  // Declaración del entry point de la shell
 
 int main() {
-    char *args[] = { "loop_a", NULL };
-    int pid = sys_create_process("loop_a", 1, 1, loop_a_main, args);
+    char *args[] = { "sh", NULL };
+    int pid = sys_create_process("sh", 1, 1, &shell, args);
     sys_wait_pid(pid);
     return 0;
 }

@@ -6,6 +6,7 @@
 #include <videodriver.h>
 #include <idtLoader.h>
 #include <sound.h>
+#include <scheduler.h>
 #include <colors.h>
 #include <homero.h>
 #include <mm_manager.h>
@@ -58,7 +59,7 @@ void * initializeKernelBinary()
 	return getStackBase();
 }
 
-extern int loop_a_main(int argc, char **argv);
+// extern int loop_a_main(int argc, char **argv);
 
 int main()
 {	
@@ -70,17 +71,20 @@ int main()
 		MANAGED_MEMORY_SIZE
 	);
 
-    char *args[] = { "loop_a", NULL };
+ char *shellArgs[] = { "sh", NULL };
+PCB *shellPCB = create_process("sh", 0, 1, true, sampleCodeModuleAddress, shellArgs);
+if (shellPCB == NULL) {
+    printStringColor("ERROR al crear proceso de shell\n", RED);
+} else {
+	printStringColor("Shell creado correctamente.\n", GREEN);
+    startShell(shellPCB->pid);  // ✅ Ahora usás el PID real
+}
 
-    create_process("loop_a", 0, 1, true, (void *)loop_a_main, args);
 
-	start_scheduler();
-	//((EntryPoint)sampleCodeModuleAddress)(); //Calling sampleCodeModule's main address
-	
 
-	while (1) {
-		printChar('H', 100, 100, (Color){255, 255, 255});  // blanco
-	}
+	// while (1) {
+	// 	printChar('H', 100, 100, (Color){255, 255, 255});  // blanco
+	// }
 	// beep();
 	return 0;
 }

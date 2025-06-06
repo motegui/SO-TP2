@@ -5,7 +5,7 @@
 #define DEFAULT_QUANTUM 5
 
 static int quantum_remaining = DEFAULT_QUANTUM;
-
+uint64_t schedulerStatus = OFF;
 PCB *pick_next_process();
 void schedule();
 
@@ -69,6 +69,8 @@ void save_context(PCB *pcb) {
 }
 
 void load_context(PCB *pcb) {
+    ncPrint("→ load_context\n");
+
     __asm__ volatile("mov %0, %%rsp\n"
                  "ret"            // saltar a la dirección que estaba en la pila del proceso
                  :
@@ -86,3 +88,32 @@ void start_scheduler() {
 
     load_context(next);
 }
+PCB *findPcb(int pid) {
+    PCBNode *curr = get_active_process_list();
+    if (!curr) return NULL;
+
+    PCBNode *start = curr;
+    do {
+        if (curr->pcb->pid == pid)
+            return curr->pcb;
+        curr = curr->next ? curr->next : get_active_process_list();
+    } while (curr != start);
+
+    return NULL;
+}
+
+void startShell(int pid) {
+    PCB *shell = findPcb(pid);
+    if (shell == NULL) {
+        return;
+    }
+
+    set_process_state(shell, READY);
+
+    set_current_process(shell);
+
+    schedulerStatus = ON;  // Si tu sistema usa este flag
+
+    start_scheduler();
+}
+
