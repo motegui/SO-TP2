@@ -58,8 +58,6 @@ void * initializeKernelBinary()
 	return getStackBase();
 }
 
-extern int loop_a_main(int argc, char **argv);
-
 int main()
 {	
 	load_idt(); //Setup idt before terminal runs
@@ -70,12 +68,11 @@ int main()
 		MANAGED_MEMORY_SIZE
 	);
 
-    char *args[] = { "loop_a", NULL };
+	char *shellArgs[] = { "sh", NULL };
 
-    create_process("loop_a", 0, 1, true, (void *)loop_a_main, args);
+   	create_process("sh", 0, 1, true, sampleCodeModuleAddress, shellArgs);
 
 	start_scheduler();
-	//((EntryPoint)sampleCodeModuleAddress)(); //Calling sampleCodeModule's main address
 	
 
 	while (1) {
