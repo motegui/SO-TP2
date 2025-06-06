@@ -7,6 +7,7 @@
 #include "mm_manager.h"
 #include <stdint.h>
 #include <unistd.h>
+#include "lib.h"
 
 typedef enum {
     NEW,

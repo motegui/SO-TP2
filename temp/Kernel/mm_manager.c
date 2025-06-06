@@ -13,33 +13,34 @@ MemoryManagerADT createMemoryManager(void *const restrict memoryForMemoryManager
 }
 
 void *allocMemory(MemoryManagerADT const restrict memoryManager, const size_t memoryToAllocate) {
-	
-	Block *curr = memoryManager->blockList;
-	while (curr != NULL) {
-		if (curr->is_free && curr->size >= memoryToAllocate) {
-			curr->is_free = false;
-			return curr->address;
-		}
-		curr = curr->next;
-	}
+    Block *curr = memoryManager->blockList;
+    while (curr != NULL) {
+        if (curr->is_free && curr->size >= memoryToAllocate) {
+            curr->is_free = false;
+            return curr->address;
+        }
+        curr = curr->next;
+    }
 
-	if (memoryManager->nextAddress + memoryToAllocate > memoryManager->endAddress)
-		return NULL; 
+    size_t totalSize = memoryToAllocate + sizeof(Block);
+    if (memoryManager->nextAddress + totalSize > memoryManager->endAddress)
+        return NULL;
 
-	void *allocation = memoryManager->nextAddress;
-	memoryManager->nextAddress += memoryToAllocate;
+    Block *newBlock = (Block *) memoryManager->nextAddress;
+    memoryManager->nextAddress += sizeof(Block);
 
-	Block *newBlock = (Block *) memoryManager->nextAddress;
-	memoryManager->nextAddress += sizeof(Block);
+    void *allocation = memoryManager->nextAddress;
+    memoryManager->nextAddress += memoryToAllocate;
 
-	newBlock->address = allocation;
-	newBlock->size = memoryToAllocate;
-	newBlock->is_free = false;
-	newBlock->next = memoryManager->blockList;
-	memoryManager->blockList = newBlock;
+    newBlock->address = allocation;
+    newBlock->size = memoryToAllocate;
+    newBlock->is_free = false;
+    newBlock->next = memoryManager->blockList;
+    memoryManager->blockList = newBlock;
 
-	return allocation;
+    return allocation;
 }
+
 
 int freeMemory(MemoryManagerADT const restrict memoryManager, void *const memoryToFree) {
 	Block *curr = memoryManager->blockList;

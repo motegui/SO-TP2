@@ -58,6 +58,7 @@ void * initializeKernelBinary()
 	return getStackBase();
 }
 
+extern int loop_a_main(int argc, char **argv);
 
 int main()
 {	
@@ -69,13 +70,13 @@ int main()
 		MANAGED_MEMORY_SIZE
 	);
 
+    char *args[] = { "loop_a", NULL };
 
+    create_process("loop_a", 0, 1, true, (void *)loop_a_main, args);
 
-
-	((EntryPoint)sampleCodeModuleAddress)(); //Calling sampleCodeModule's main address
+	start_scheduler();
+	//((EntryPoint)sampleCodeModuleAddress)(); //Calling sampleCodeModule's main address
 	
-	schedule();
-
 
 	while (1) {
 		printChar('H', 100, 100, (Color){255, 255, 255});  // blanco

@@ -119,31 +119,34 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
         freeMemory(globalMemoryManager, pcb);
         return NULL;
     }
-    void *stack_top = (char *)pcb->stack_base + 8192;
+    
+    uint64_t *stack_top = (uint64_t *)((uint64_t)pcb->stack_base + 8192);
+    stack_top = (uint64_t *)((uint64_t)stack_top & ~0xF);
 
-    pcb->stack_pointer = create_stack(stack_top, entry_point, args, process_wrapper);
+    pcb->stack_pointer = create_stack(stack_top, entry_point, args, &process_wrapper);
 
-
+    pcb->state = READY;
     add_active_process(pcb);
     return pcb;
-}
-
-void process_wrapper(int (*entry_point)(int, char **), char **args) {
-    entry_point(0, args);
-    exit_process();
 }
 
 void *create_stack(void *stack_top, void *entry_point, char **args, void *wrapper) {
     uint64_t *sp = (uint64_t *)stack_top;
 
-    *(--sp) = (uint64_t)exit_process;     // return addr
-    *(--sp) = (uint64_t)args;             // 2º arg: argv
-    *(--sp) = (uint64_t)0;                // 1º arg: argc
-    *(--sp) = (uint64_t)wrapper;          // ret -> wrapper
+    sp = (uint64_t *)((uint64_t)sp & ~0xF);
+
+    // Armamos la pila para que al hacer ret salte a wrapper(entry_point, args)
+    *(--sp) = (uint64_t)wrapper;      // RIP (dirección de retorno)
+    *(--sp) = (uint64_t)entry_point;  // RDI (primer argumento)
+    *(--sp) = (uint64_t)args;         // RSI (segundo argumento)
 
     return sp;
 }
 
+void process_wrapper(int (*entry_point)(int, char **), char **args) {
+    entry_point(1, args);
+    exit_process();
+}
 
 void set_process_state(PCB *pcb, ProcessState new_state) {
     if (pcb) {

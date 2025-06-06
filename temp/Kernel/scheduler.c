@@ -74,3 +74,15 @@ void load_context(PCB *pcb) {
                  :
                  : "g"(pcb->stack_pointer));
 }
+
+void start_scheduler() {
+    PCB *next = pick_next_process();
+    if (!next) {
+        next = get_idle_pcb();
+    }
+
+    set_current_process(next);
+    set_process_state(next, RUNNING);
+
+    load_context(next);
+}

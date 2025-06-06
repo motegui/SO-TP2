@@ -1,4 +1,5 @@
 #include <time.h>
+#include <scheduler.h>
 
 extern void _hlt();
 
