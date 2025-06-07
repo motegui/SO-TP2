@@ -78,11 +78,13 @@ void shell() {
 	char buffer[1024] = {0};
 	char oldBuffer[1024] = {0};
 	char flag = 0; // Used for up arrow
+	int defaultFds[2] = {0, 1};
+
 	while(1) {
 		unsigned char c = getChar();
 		if (c == '\n') {
 			buffer[count] = 0;
-			analizeBuffer(buffer, count);
+			analizeBuffer(buffer, count,0, defaultFds);
 			printColor("\nHomerOS: $> ", GREEN);
 			strcpy(oldBuffer, buffer);
 			flag = 1;
@@ -140,10 +142,23 @@ int commandMatch(char * str1, char * command, int count) {
 	}
 	return str1[i] == command[i];
 }
+int isBackground(char * buff) {
+	int j = 0;
+	while (buff[j] != 0) {
+		if (buff[j] == '&') {
+			buff[j] = 0;  // corta el comando justo antes del &
+			return 1;
+		}
+		j++;
+	}
+	return 0;
+}
 
-void analizeBuffer(char * buffer, int count) {
+int analizeBuffer(char * buffer, int count,int pipe, int *	fds) {
 	if (count <= 0)
-		return;
+		return -1;
+	int background = isBackground(buffer);
+
 	if (commandMatch(buffer, "help", count) || commandMatch(buffer, "HELP", count)) {
 		printColor("\n\nComandos disponibles:\n\n", YELLOW);
 		for (int i = 0; i < COMMANDS_QUANTITY; i++) {
@@ -161,9 +176,16 @@ void analizeBuffer(char * buffer, int count) {
 		fillRegisters();
 	} else if (commandMatch(buffer, "clear", count)) {
 		sys_clear_screen();
-	} else if (commandMatch(buffer, "pong", count)) {
-		pong();
-	} else if (commandMatch(buffer, "div0", count)) {
+	}else if (commandMatch(buffer, "pong", count)) {
+		printColor("PONG iniciado\n", GREEN);
+
+		char * args[2] = {"pong", NULL};
+		int pid = sys_create_process("pong", 1, !background, &pong, args);
+		sys_yield();
+		// if (!piped && !background)
+		sys_wait_pid(pid);
+		return pid;
+	}  else if (commandMatch(buffer, "div0", count)) {
 		divideByZero();
 	} else if (commandMatch(buffer, "invalidop", count)) {
 		invalidOpcode();
@@ -172,6 +194,7 @@ void analizeBuffer(char * buffer, int count) {
 		sys_draw_image(diego, 100, 100);
 		playBSong();
 		sys_clear_screen();
+<<<<<<< Updated upstream:temp/Userland/SampleCodeModule/shell.c
 	} else if (commandMatch(buffer, "mem", count)) {
     	uint64_t used = 0, free = 0;
     	sys_get_mem_status(&used, &free);
@@ -223,6 +246,14 @@ void analizeBuffer(char * buffer, int count) {
         	printfColor("Wc process created with PID %d\n", GREEN, pid);
     	}
 	}
+=======
+	} 
+	else if (commandMatch(buffer, "ps", count)) {
+        char procBuffer[1024];
+        sys_list_processes(procBuffer, sizeof(procBuffer));
+        printColor(procBuffer, CYAN); 
+    }
+>>>>>>> Stashed changes:temp/Userland/SampleCodeModule/programs/shell.c
 
 	// else if (commandMatch(buffer, "testmm", count)) {
 	// 	parseCommand(testmmArgs, buffer, 3);

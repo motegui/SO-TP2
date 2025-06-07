@@ -34,6 +34,12 @@ char getChar() {
     return c[0];
 }
 
+char getCharNoBlock() {
+	char c[] = {0};
+	sys_read_no_block(0, c, 1);
+	return c[0];
+}
+
 void putChar(char c) {
     sys_write(1, &c, 1);
 }

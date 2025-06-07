@@ -8,6 +8,7 @@ void shell();
 
 int commandMatch(char * str1, char * command, int count);
 
-void analizeBuffer(char * buffer, int count);
+int analizeBuffer(char * buffer, int count, int pipe, int *fds);
+int isBackground(char * buff);
 
 #endif

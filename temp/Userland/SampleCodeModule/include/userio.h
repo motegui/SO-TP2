@@ -17,6 +17,8 @@ void printColorChar(char c, uint64_t color);
 
 char getChar();
 
+char getCharNoBlock();
+
 void putChar(char c);
 
 unsigned int strlen(char *str);
