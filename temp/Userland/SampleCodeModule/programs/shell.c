@@ -12,6 +12,7 @@
 #define COMMANDS_QUANTITY (sizeof(commandsNames) / sizeof(char *))
 char * testmmArgs[3];
 
+extern int loop_a_main(int argc, char **argv);
 
 int sscanf(const char *str, const char *format, int *a, int *b) {
     if (format[0] == '%' && format[1] == 'd' && format[2] == ' ' && format[3] == '%' && format[4] == 'd') {
@@ -141,9 +142,25 @@ int commandMatch(char * str1, char * command, int count) {
 	return str1[i] == command[i];
 }
 
+int isBackground(char * buff) {
+	int j = 0;
+	while (buff[j] != 0) {
+		if (buff[j] == '&') {
+			buff[j] = 0;  // corta el comando justo antes del &
+			return 1;
+		}
+		j++;
+	}
+	return 0;
+}
+
+
 void analizeBuffer(char * buffer, int count) {
 	if (count <= 0)
 		return;
+
+	int background = isBackground(buffer);
+
 	if (commandMatch(buffer, "help", count) || commandMatch(buffer, "HELP", count)) {
 		printColor("\n\nComandos disponibles:\n\n", YELLOW);
 		for (int i = 0; i < COMMANDS_QUANTITY; i++) {
@@ -162,8 +179,14 @@ void analizeBuffer(char * buffer, int count) {
 	} else if (commandMatch(buffer, "clear", count)) {
 		sys_clear_screen();
 	} else if (commandMatch(buffer, "pong", count)) {
-		pong();
-	} else if (commandMatch(buffer, "div0", count)) {
+		printColor("[INFO] creando proceso pong\n", GREEN);
+		char * args[] = { "pong", NULL };
+		int pid = sys_create_process("pong", 0, 1, (void *)pong, args);
+		printColor("[INFO] proceso creado. Esperando que termine...\n", GREEN);
+		sys_wait_pid(pid);
+		printColor("[INFO] proceso pong termino\n", GREEN);
+	}
+	 else if (commandMatch(buffer, "div0", count)) {
 		divideByZero();
 	} else if (commandMatch(buffer, "invalidop", count)) {
 		invalidOpcode();
@@ -172,7 +195,17 @@ void analizeBuffer(char * buffer, int count) {
 		sys_draw_image(diego, 100, 100);
 		playBSong();
 		sys_clear_screen();
-	} 
+	} else if (commandMatch(buffer, "loop", count)) {
+        printColor("LOOP iniciado\n", GREEN);
+        char * args[2] = {"loop", NULL};
+        int pid = sys_create_process("loop", 1, 1, &loop_a_main, args);
+		sys_wait_pid(pid);
+        return;
+    } else if (commandMatch(buffer, "ps", count)) {
+        char procBuffer[1024];
+        sys_list_processes(procBuffer, sizeof(procBuffer));
+        printColor(procBuffer, CYAN); 
+    }
 
 	// else if (commandMatch(buffer, "testmm", count)) {
 	// 	parseCommand(testmmArgs, buffer, 3);

@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include "scheduler.h"
-
+#include <videodriver.h>
 
 int int_to_str(int value, char *str) {
     char temp[12];
@@ -101,6 +101,9 @@ char *strdup_kernel(const char *src) {
 }
 
 PCB *create_process(const char *name, int parent_pid, int priority, bool foreground, void *entry_point, char **args){
+    printStringNColor("[KERNEL] create process\n", 24, (Color){255, 255, 0});
+
+
     PCB *pcb = allocMemory(globalMemoryManager, sizeof(PCB));
     if (!pcb) return NULL;
 
@@ -126,26 +129,38 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     pcb->stack_pointer = create_stack(stack_top, entry_point, args, &process_wrapper);
 
     pcb->state = READY;
+
     add_active_process(pcb);
+
+
     return pcb;
+    
 }
 
 void *create_stack(void *stack_top, void *entry_point, char **args, void *wrapper) {
-    uint64_t *sp = (uint64_t *)stack_top;
+    printStringNColor("[KERNEL] create stack\n", 24, (Color){255, 255, 0});
 
+     uint64_t *sp = (uint64_t *)stack_top;
+
+    // Alineamos la pila a 16 bytes
     sp = (uint64_t *)((uint64_t)sp & ~0xF);
 
-    // Armamos la pila para que al hacer ret salte a wrapper(entry_point, args)
-    *(--sp) = (uint64_t)wrapper;      // RIP (dirección de retorno)
-    *(--sp) = (uint64_t)entry_point;  // RDI (primer argumento)
-    *(--sp) = (uint64_t)args;         // RSI (segundo argumento)
+    *(--sp) = (uint64_t)wrapper;       // ← RIP (ret salta acá)
+    *(--sp) = (uint64_t)entry_point;   // ← RDI (1º arg)
+    *(--sp) = (uint64_t)args;          // ← RSI (2º arg)
 
     return sp;
 }
 
 void process_wrapper(int (*entry_point)(int, char **), char **args) {
+    printStringNColor("[KERNEL] wrapper 1 \n", 24, (Color){255, 255, 0});
+
     entry_point(1, args);
+    printStringNColor("[KERNEL] wrapper 2 \n", 24, (Color){255, 255, 0});
+
     exit_process();
+    printStringNColor("[KERNEL] wrapper 3 \n", 24, (Color){255, 255, 0});
+
 }
 
 void set_process_state(PCB *pcb, ProcessState new_state) {
@@ -322,13 +337,21 @@ void wait_for_children(){
     }
 }
 
-void exit_process(){
+void exit_process() {
+    printStringNColor("[KERNEL] exit\n", 28, (Color){255, 255, 0});
+
     PCB *current = get_current_process();
-    if (current) {
-        remove_active_process(current->pid);
-        schedule();
+    if (!current) return;
+
+    if (strcmp(current->name, "sh") == 0) {
+        printStringNColor("[KERNEL] shell morir\n", 28, (Color){255, 255, 0});
+        return;
     }
+
+    remove_active_process(current->pid);
+    schedule(); // esto hace un context switch
 }
+
 
 void kill_process(int pid){
     PCB *target = get_process_by_pid(pid);

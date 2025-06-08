@@ -1,5 +1,4 @@
 #include <time.h>
-#include <scheduler.h>
 
 extern void _hlt();
 
@@ -7,6 +6,7 @@ static unsigned long ticks = 0;
 
 void timer_handler() {
 	ticks++;
+	schedule();
 }
 
 int ticks_elapsed() {

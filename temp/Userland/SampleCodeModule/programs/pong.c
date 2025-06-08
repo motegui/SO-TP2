@@ -230,6 +230,8 @@ void handleKey(unsigned char key, char moves[]) {
 }
 
 void pong() {
+    printColor("[PONG] estoy adentro de pong()\n", CYAN);
+
     sys_clear_screen();
     sys_toggle_cursor();
 

@@ -9,6 +9,8 @@
 int loop_a_main(int argc, char **argv);
 
 int main(int argc, char **argv) {
+
+    //loop_a_main(argc, argv);
     shell();
     return 0;
 }
