@@ -4,9 +4,9 @@ extern void _hlt();
 
 static unsigned long ticks = 0;
 
-void timer_handler() {
+void timer_handler(uint64_t current_rsp) {
 	ticks++;
-	schedule();
+	return schedule(current_rsp);
 }
 
 int ticks_elapsed() {

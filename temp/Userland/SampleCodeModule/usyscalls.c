@@ -64,8 +64,11 @@ uint64_t sys_draw_image(const unsigned long * image, int width, int height) {
 }
 
 uint64_t sys_create_process(char *name, int priority, int foreground, void *entry_point, char **args) {
-    return sys_call(14, (uint64_t)name, (uint64_t)priority, (uint64_t)foreground,
+    uint64_t pid = sys_call(14, (uint64_t)name, (uint64_t)priority, (uint64_t)foreground,
                     (uint64_t)entry_point, (uint64_t)args);
+    printf("[usys] pid = %d\n", (int)pid);
+    return pid;
+
 }
 
 void sys_exit_process() {
@@ -138,5 +141,5 @@ int64_t sys_sem_post(uint64_t semName) {
 }
 
 uint64_t sys_wait_pid(uint64_t pid){
-    return sys_call(32, pid,0,0,0,0);
+    return sys_call(35, pid,0,0,0,0);
 }

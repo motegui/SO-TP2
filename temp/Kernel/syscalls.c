@@ -57,7 +57,7 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_draw_image(arg0, arg1, arg2);
             break;
         case 14:
-            sys_create_process((char *)arg0, (int)arg1, (int)arg2, (void *)arg3, (char **)arg4);
+            sys_create_process(arg0, arg1, arg2, arg3,arg4);
             break;
         case 15:
             sys_exit_process();
@@ -111,7 +111,7 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
         case 34:
             return sys_write_pipe((int) arg0, (char*)arg1, (int)arg2);
         case 35:
-        return (int64_t) sys_wait_pid(arg0);
+            return (int64_t) sys_wait_pid(arg0);
         }
 }
 
@@ -189,8 +189,12 @@ static void sys_get_screensize(uint64_t width, uint64_t height) {
     *h = getHeight();
 }
 
-static int64_t sys_create_process(char *name, int priority, int foreground, void *entry_point, char **args) {
-    create_process(name, get_current_process()->pid, priority, foreground, entry_point, args);
+static int64_t sys_create_process(uint64_t name, uint64_t priority, uint64_t foreground, uint64_t entry_point, uint64_t args) {
+    PCB *pcb = create_process(name, get_current_process()->pid, priority, foreground, (void *) entry_point, args);
+    if (!pcb) return -1;
+    printStringNColor("[sys] sys pid:\n", 24, (Color){100, 100, 100});
+    printIntLn(pcb->pid);
+    return pcb->pid;
 }
 
 static void sys_get_pid() {
@@ -289,5 +293,7 @@ static uint64_t sys_write_pipe(int pipe_id, char *buffer, int count){
 }
 
 static int64_t sys_wait_pid(uint64_t pid){
+    printStringColor("[KERNEL] sys_wait_pid recibiendo pid = ", WHITE);
+    printIntLn(pid);
     return (int64_t) waitpid((int)pid);
 }

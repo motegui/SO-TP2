@@ -47,7 +47,8 @@ static void sys_wait_for_children();
 static void sys_get_pid();
 static void sys_list_processes(char *buffer, uint64_t length);
 static void sys_kill_process(int pid);
-static int64_t sys_create_process(char *name, int priority, int foreground, void *entry_point, char **args);
+
+static int64_t sys_create_process(uint64_t name, uint64_t priority, uint64_t foreground, uint64_t entry_point, uint64_t args);
 
 static void sys_exit_process();
 static uint64_t sys_malloc(uint64_t size);

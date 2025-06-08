@@ -71,7 +71,7 @@ static char *commands[] = {
 };
 
 void shell() {
-    printColor("Welcome to HomerOS. Type \"help\" for command list\n", ORANGE);
+	printColor("Welcome to HomerOS. Type \"help\" for command list\n", ORANGE);
 	printfColor("Shell PID: %d\n", GREEN, sys_get_pid());
 	printColor("\nHomerOS: $> ", GREEN);
 
@@ -181,8 +181,9 @@ void analizeBuffer(char * buffer, int count) {
 	} else if (commandMatch(buffer, "pong", count)) {
 		printColor("[INFO] creando proceso pong\n", GREEN);
 		char * args[] = { "pong", NULL };
-		int pid = sys_create_process("pong", 0, 1, (void *)pong, args);
+		int pid = sys_create_process("pong", 1, 1, &pong, args);
 		printColor("[INFO] proceso creado. Esperando que termine...\n", GREEN);
+		printf("[INFO] pid = %d\n", pid);
 		sys_wait_pid(pid);
 		printColor("[INFO] proceso pong termino\n", GREEN);
 	}

@@ -3,7 +3,8 @@
 
 #include "process_manager.h"
 
-void schedule();//llama al scheduler manualmente
+
+uint64_t schedule(uint64_t current_rsp); //llama al scheduler manualmente
 
 void yield();// el proceso actual cede el CPU
 

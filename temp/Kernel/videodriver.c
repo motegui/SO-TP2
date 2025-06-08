@@ -285,3 +285,37 @@ void drawImage(const unsigned long int * image, int width, int height) {
 		}
 	}
 }
+
+void printInt(int value) {
+    char buffer[20]; // suficiente para un entero
+    int i = 0;
+
+    if (value == 0) {
+        printChar('0', column * CHAR_WIDTH, line * CHAR_HEIGHT, WHITE);
+        column++;
+        return;
+    }
+
+    if (value < 0) {
+        printChar('-', column * CHAR_WIDTH, line * CHAR_HEIGHT, WHITE);
+        column++;
+        value = -value;
+    }
+
+    while (value > 0) {
+        buffer[i++] = (value % 10) + '0';
+        value /= 10;
+    }
+
+    while (i > 0) {
+        printChar(buffer[--i], column * CHAR_WIDTH, line * CHAR_HEIGHT, WHITE);
+        column++;
+    }
+}
+
+void printIntLn(int value) {
+    printInt(value);
+    line++;
+    column = 0;
+    moveCursor();
+}

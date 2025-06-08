@@ -101,7 +101,7 @@ char *strdup_kernel(const char *src) {
 }
 
 PCB *create_process(const char *name, int parent_pid, int priority, bool foreground, void *entry_point, char **args){
-    printStringNColor("[KERNEL] create process\n", 24, (Color){255, 255, 0});
+    printStringNColor("[KERNEL] create proc pid:\n", 24, (Color){144, 144, 134});
 
 
     PCB *pcb = allocMemory(globalMemoryManager, sizeof(PCB));
@@ -114,6 +114,11 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     pcb->priority = priority;
     pcb->foreground = foreground;
     pcb->ticks = 0;
+
+    printIntLn(pcb->pid);
+    printStringNColor("[KERNEL] parent\n", 24, (Color){155, 155, 155});
+
+    printIntLn(pcb->parent_pid);
 
     // Asignar stack (8KB)
     pcb->stack_base = allocMemory(globalMemoryManager, 8192);
@@ -132,7 +137,7 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
 
     add_active_process(pcb);
 
-
+    
     return pcb;
     
 }
@@ -311,7 +316,7 @@ void unblock_process(int pid){
 void yield() {
     PCB *current = get_current_process();
     set_process_state(current, READY);
-    schedule();
+    schedule(NULL);
 }
 
 void wait_for_children(){
@@ -348,9 +353,11 @@ void exit_process() {
         return;
     }
 
+    current->state = TERMINATED;
     remove_active_process(current->pid);
-    schedule(); // esto hace un context switch
+    schedule(NULL);
 }
+
 
 
 void kill_process(int pid){
@@ -362,7 +369,7 @@ void kill_process(int pid){
     else {
         ncPrint("Error: Proceso no encontrado.\n");
     }
-    schedule(); // Reprogramar después de eliminar el proceso
+    schedule(NULL); // Reprogramar después de eliminar el proceso
     ncPrint("Proceso con PID ");
     ncPrintDec(pid);
     ncPrint(" eliminado.\n");
@@ -417,17 +424,26 @@ void test_process_manager() {
 */
 
 int waitpid(int pid) {
+    printStringNColor("[witpid] pid num:\n", 28, (Color){255, 255, 155});
+
+    printIntLn(pid);
+    printStringNColor("\n", 28, (Color){255, 255, 155});
+
     PCB *current_proc = get_current_process();
     if (!current_proc) return -1;
 
     PCB *target = get_process_by_pid(pid);
     if (!target || target->parent_pid != current_proc->pid) {
+            printStringNColor("[KERNEL] if\n", 28, (Color){255, 255, 155});
+
         // No existe o no es hijo del proceso actual
         return -1;
     }
 
     // Esperar mientras el hijo no haya terminado
     while (target->state != TERMINATED) {
+        printStringNColor("[KERNEL] while\n", 28, (Color){255, 255, 155});
+
         yield();  // Cede CPU y sigue esperando
         target = get_process_by_pid(pid); // Refrescamos (por si fue eliminado)
         if (!target) break; // Ya fue eliminado

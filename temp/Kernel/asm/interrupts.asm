@@ -26,6 +26,8 @@ EXTERN irqDispatcher
 EXTERN exceptionDispatcher
 EXTERN syscallHandler
 
+extern timer_handler
+extern schedule
 SECTION .text
 
 %macro pushState 0
@@ -209,7 +211,13 @@ save_original_regs:
 
 ;8254 Timer (Timer Tick)
 _irq00Handler:
-	irqHandlerMaster 0
+    cli                 ; Deshabilitar interrupciones
+    call irqDispatcher  ; Llamar a timer
+    ; Señal EOI al PIC maestro
+    mov al, 0x20
+    out 0x20, al
+    sti                 ; Volver a habilitar interrupciones
+    iretq     
 
 ;Keyboard
 _irq01Handler:
