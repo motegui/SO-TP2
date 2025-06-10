@@ -68,6 +68,19 @@ int main()
 		MANAGED_MEMORY_SIZE
 	);
 
+uint8_t *code = (uint8_t *)0x400000;
+char buffer[3];  // para cada byte en hex (2 dígitos + null)
+
+for (int i = 0; i < 16; i++) {
+    uint8_t byte = code[i];
+    buffer[0] = "0123456789ABCDEF"[byte >> 4];
+    buffer[1] = "0123456789ABCDEF"[byte & 0x0F];
+    buffer[2] = '\0';
+    printString(buffer);
+    printString(" ");
+}
+printString("\n");
+
 	char *shellArgs[] = { "sh", NULL };
 
    	create_process("sh", 0, 1, true, sampleCodeModuleAddress, shellArgs);

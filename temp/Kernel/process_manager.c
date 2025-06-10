@@ -150,9 +150,10 @@ void *create_stack(void *stack_top, void *entry_point, char **args, void *wrappe
     // Alineamos la pila a 16 bytes
     sp = (uint64_t *)((uint64_t)sp & ~0xF);
 
-    *(--sp) = (uint64_t)wrapper;       // ← RIP (ret salta acá)
-    *(--sp) = (uint64_t)entry_point;   // ← RDI (1º arg)
-    *(--sp) = (uint64_t)args;          // ← RSI (2º arg)
+    *(--sp) = wrapper;       // RIP ← wrapper
+    *(--sp) = entry_point;   // RDI
+    *(--sp) = args;          // RSI
+
 
     return sp;
 }
@@ -160,7 +161,7 @@ void *create_stack(void *stack_top, void *entry_point, char **args, void *wrappe
 void process_wrapper(int (*entry_point)(int, char **), char **args) {
     printStringNColor("[KERNEL] wrapper 1 \n", 24, (Color){255, 255, 0});
 
-    entry_point(1, args);
+    ((int (*)(int, char **))entry_point)(1, args);
     printStringNColor("[KERNEL] wrapper 2 \n", 24, (Color){255, 255, 0});
 
     exit_process();
