@@ -57,8 +57,7 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_draw_image(arg0, arg1, arg2);
             break;
         case 14:
-            sys_create_process(arg0, arg1, arg2, arg3,arg4);
-            break;
+            return sys_create_process(arg0, arg1, arg2, arg3,arg4);
         case 15:
             sys_exit_process();
             break;
