@@ -220,25 +220,14 @@ save_original_regs:
 ;8254 Timer (Timer Tick)
 _irq00Handler:
 	pushState
-
 	mov rdi, rsp
 	call schedule
-	
-	cmp rax, 0
-	je .continue
-
 	mov rsp, rax
-
-	.continue:
-
-	mov rdi, 0
-	call irqDispatcher
-
 	mov al, 20h
 	out 20h, al
-
 	popState
 	iretq
+	
 ;Keyboard
 _irq01Handler:
 	pushState

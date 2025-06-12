@@ -41,7 +41,7 @@ void load_idt() {
 	picMasterMask(0xFC); //1111 1100
 	picSlaveMask(0xFF);  //1111 1111
         
-	_sti(); //Enable interruptions
+	//_sti(); //Enable interruptions
 }
 
 static void setup_IDT_entry (int index, uint64_t offset) {

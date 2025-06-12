@@ -1,12 +1,14 @@
 #include <time.h>
+#include <videodriver.h>
+#include <stddef.h>
 
 extern void _hlt();
 
 static unsigned long ticks = 0;
 
-void timer_handler(uint64_t current_rsp) {
+void timer_handler() {
 	ticks++;
-	return schedule(current_rsp);
+	//schedule(NULL);
 }
 
 int ticks_elapsed() {

@@ -15,7 +15,8 @@ void print(char* string) {
 }
 
 void printColor(char* string, uint64_t color) {
-    sys_write_color(1, string, strlen(string), color);
+    unsigned int len = strlen(string);
+    sys_write_color(1, string, len, color);
 }
 
 void printChar(char c) {

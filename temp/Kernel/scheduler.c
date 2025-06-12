@@ -20,6 +20,8 @@ uint64_t schedule(uint64_t current_rsp) {
     set_current_process(next);
     next->state = RUNNING;
 
+    load_context(next);
+
     return next->stack_pointer;
 }
 

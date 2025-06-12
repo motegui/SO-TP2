@@ -101,7 +101,7 @@ char *strdup_kernel(const char *src) {
 }
 
 PCB *create_process(const char *name, int parent_pid, int priority, bool foreground, void *entry_point, char **args){
-    printStringNColor("[KERNEL] create proc pid:\n", 24, (Color){144, 144, 134});
+    printStringNColor("[PM] create proc pid:\n", 24, (Color){144, 144, 134});
 
 
     PCB *pcb = allocMemory(globalMemoryManager, sizeof(PCB));
@@ -116,7 +116,7 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     pcb->ticks = 0;
 
     printIntLn(pcb->pid);
-    printStringNColor("[KERNEL] parent\n", 24, (Color){155, 155, 155});
+    printStringNColor("[PM] parent\n", 24, (Color){155, 155, 155});
 
     printIntLn(pcb->parent_pid);
 
@@ -143,7 +143,7 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
 }
 
 void *create_stack(void *stack_top, void *entry_point, char **args, void *wrapper) {
-    printStringNColor("[KERNEL] create stack\n", 24, (Color){255, 255, 0});
+    printStringNColor("[PM] create stack\n", 24, (Color){255, 255, 0});
 
      uint64_t *sp = (uint64_t *)stack_top;
 
@@ -159,13 +159,13 @@ void *create_stack(void *stack_top, void *entry_point, char **args, void *wrappe
 }
 
 void process_wrapper(int (*entry_point)(int, char **), char **args) {
-    printStringNColor("[KERNEL] wrapper 1 \n", 24, (Color){255, 255, 0});
+    printStringNColor("[PM] wrapper 1 \n", 24, (Color){255, 255, 0});
 
     ((int (*)(int, char **))entry_point)(1, args);
-    printStringNColor("[KERNEL] wrapper 2 \n", 24, (Color){255, 255, 0});
+    printStringNColor("[PM] wrapper 2 \n", 24, (Color){255, 255, 0});
 
     exit_process();
-    printStringNColor("[KERNEL] wrapper 3 \n", 24, (Color){255, 255, 0});
+    printStringNColor("[PM] wrapper 3 \n", 24, (Color){255, 255, 0});
 
 }
 
@@ -315,6 +315,7 @@ void unblock_process(int pid){
 }
 
 void yield() {
+
     PCB *current = get_current_process();
     set_process_state(current, READY);
     schedule(NULL);
@@ -344,13 +345,13 @@ void wait_for_children(){
 }
 
 void exit_process() {
-    printStringNColor("[KERNEL] exit\n", 28, (Color){255, 255, 0});
+    printStringNColor("[PM] exit\n", 28, (Color){255, 255, 0});
 
     PCB *current = get_current_process();
     if (!current) return;
 
     if (strcmp(current->name, "sh") == 0) {
-        printStringNColor("[KERNEL] shell morir\n", 28, (Color){255, 255, 0});
+        printStringNColor("[PM] shell morir\n", 28, (Color){255, 255, 0});
         return;
     }
 
@@ -435,7 +436,7 @@ int waitpid(int pid) {
 
     PCB *target = get_process_by_pid(pid);
     if (!target || target->parent_pid != current_proc->pid) {
-            printStringNColor("[KERNEL] if\n", 28, (Color){255, 255, 155});
+            printStringNColor("[PM] if\n", 28, (Color){255, 255, 155});
 
         // No existe o no es hijo del proceso actual
         return -1;
@@ -443,8 +444,6 @@ int waitpid(int pid) {
 
     // Esperar mientras el hijo no haya terminado
     while (target->state != TERMINATED) {
-        printStringNColor("[KERNEL] while\n", 28, (Color){255, 255, 155});
-
         yield();  // Cede CPU y sigue esperando
         target = get_process_by_pid(pid); // Refrescamos (por si fue eliminado)
         if (!target) break; // Ya fue eliminado
