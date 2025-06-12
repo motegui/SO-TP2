@@ -28,11 +28,9 @@ EXTERN syscallHandler
 
 extern timer_handler
 extern schedule
-extern shcedule
 SECTION .text
 
-%macro pushState 0
-	push rax
+%macro pushStateNoRax 0
 	push rbx
 	push rcx
 	push rdx
@@ -49,7 +47,7 @@ SECTION .text
 	push r15
 %endmacro
 
-%macro popState 0
+%macro popStateNoRax 0
 	pop r15
 	pop r14
 	pop r13
@@ -64,6 +62,15 @@ SECTION .text
 	pop rdx
 	pop rcx
 	pop rbx
+%endmacro
+
+%macro pushState 0
+	push rax
+	pushStateNoRax
+%endmacro
+
+%macro popState 0
+	popStateNoRax
 	pop rax
 %endmacro
 
@@ -232,7 +239,6 @@ _irq00Handler:
 
 	popState
 	iretq
-
 ;Keyboard
 _irq01Handler:
 	pushState
@@ -269,11 +275,10 @@ _irq05Handler:
 
 ;Syscalls
 _int80Handler:
-	pushState
+	pushStateNoRax
 	call syscallHandler
-	popState
+	popStateNoRax
 	iretq
-
 
 ;Zero Division Exception
 _exception0Handler:
