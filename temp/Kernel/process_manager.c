@@ -143,20 +143,37 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
 }
 
 void *create_stack(void *stack_top, void *entry_point, char **args, void *wrapper) {
-    printStringNColor("[PM] create stack\n", 24, (Color){255, 255, 0});
+    uint64_t *sp = (uint64_t *)stack_top;
 
-     uint64_t *sp = (uint64_t *)stack_top;
-
-    // Alineamos la pila a 16 bytes
+    // Alineamos el stack
     sp = (uint64_t *)((uint64_t)sp & ~0xF);
 
-    *(--sp) = wrapper;       // RIP ← wrapper
-    *(--sp) = entry_point;   // RDI
-    *(--sp) = args;          // RSI
+    *(--sp) = 0x0;                 // SS
+    *(--sp) = (uint64_t)stack_top; // RSP
+    *(--sp) = 0x202;               // RFLAGS
+    *(--sp) = 0x8;                 // CS
+    *(--sp) = (uint64_t)wrapper;   // RIP (process_wrapper)
 
+    *(--sp) = 0x0;                 // RAX
+    *(--sp) = 0x1;                 // RBX
+    *(--sp) = 0x2;                 // RCX
+    *(--sp) = 0x3;                 // RDX
+    *(--sp) = 0x4;                 // RBP
+    *(--sp) = (uint64_t)entry_point; // RDI
+    *(--sp) = (uint64_t)args;        // RSI
+    *(--sp) = 0x8;                 // R8
+    *(--sp) = 0x9;                 // R9
+    *(--sp) = 0x10;                // R10
+    *(--sp) = 0x11;                // R11
+    *(--sp) = 0x12;                // R12
+    *(--sp) = 0x13;                // R13
+    *(--sp) = 0x14;                // R14
+    *(--sp) = 0x15;                // R15
 
-    return sp;
+    return (void *)sp;  // stack pointer del proceso
 }
+
+
 
 void process_wrapper(int (*entry_point)(int, char **), char **args) {
     printStringNColor("[PM] wrapper 1 \n", 24, (Color){255, 255, 0});

@@ -20,10 +20,9 @@ uint64_t schedule(uint64_t current_rsp) {
     set_current_process(next);
     next->state = RUNNING;
 
-    load_context(next);
-
     return next->stack_pointer;
 }
+
 
 PCB *pick_next_process() {
     //printStringNColor("[KERNEL] pick np\n", 24, (Color){255, 150, 0});
