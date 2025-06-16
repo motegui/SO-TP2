@@ -87,9 +87,9 @@ outb:
 enter_region:
     mov eax, 1
     xchg eax, [rdi]
-    cmp eax, 0
-    jne enter_region
+    dec eax
     ret
+
 
 leave_region:
     mov byte [rdi], 0

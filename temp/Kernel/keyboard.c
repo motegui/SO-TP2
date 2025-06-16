@@ -87,3 +87,10 @@ char getChar() {
     
     return toReturn;
 }
+
+char getCharNoBlock() {
+	if (elemCount == 0)
+		return 0;
+
+	return getChar();
+}

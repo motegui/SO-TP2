@@ -5,6 +5,8 @@ void keyboard_handler();
 
 char getChar();
 
+char getCharNoBlock();
+
 extern unsigned char getKey();
 
 #endif

@@ -15,10 +15,16 @@ uint64_t schedule(uint64_t current_rsp) {
     }
 
     PCB *next = pick_next_process();
-    if (!next)
+    if (!next){
+       // printStringNColor("[SCHED] if", 24, (Color){255, 255, 0});
         next = get_idle_pcb();
+    }
     set_current_process(next);
     next->state = RUNNING;
+
+    //printStringNColor("[SCHED] Eligiendo proceso: ", 24, (Color){255, 255, 0});
+  // printString(next->name);
+    //printStringNColor("\n", 24, (Color){255, 255, 0} );
 
     return next->stack_pointer;
 }
@@ -31,15 +37,19 @@ PCB *pick_next_process() {
 
     PCB *best = NULL;
     int max_priority = -1;
-
     PCBNode *start = curr;
     do {
         if (curr->pcb->state == READY && curr->pcb->priority > max_priority) {
             best = curr->pcb;
             max_priority = curr->pcb->priority;
+
         }
         curr = curr->next ? curr->next : get_active_process_list();
+
     } while (curr != start);
+
+   // printString(best->name);
+
 
     return best;
 }

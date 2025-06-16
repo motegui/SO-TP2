@@ -221,13 +221,13 @@ void analizeBuffer(char * buffer, int count, int piped, int *fds) {
 		return wait(pid, piped, background);
 	}
 	
-	// else if (commandMatch(buffer, "testmm", count)) {
-	// 	parseCommand(testmmArgs, buffer, 3);
-	// 	int pid = sys_create_process("testmm", testmmArgs, &test_mm, !background, fds);
-	// 	if (!background)
-	// 		sys_wait_pid(pid);
-	// 	return pid;
-	// }
+	else if (commandMatch(buffer, "testmm", count)) {
+		char *args[] = { "2048", NULL };
+		int pid = sys_create_process("testmm", 1, 1, &test_mm, args);
+		if (!background)
+			sys_wait_pid(pid);
+		return pid;
+	}
 	else {
 		// Intentar ejecutar el comando como un programa userland
 			printfColor("\nCommand not found. Type \"help\" for command list\n", RED);

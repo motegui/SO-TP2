@@ -17,6 +17,7 @@ typedef struct {
     bool in_use;
     uint8_t lock;
     int blocked_pid; 
+    Queue blocked_queue;
 } Semaphore;
 
 typedef Semaphore* sem_t;

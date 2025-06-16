@@ -256,7 +256,7 @@ void pong() {
     sys_write_color(STDOUT, "Press any key to start...", 25, WHITE);
     sys_write_place(STDOUT, "Press P to pause/unpause the game", 33, 740, 15);
     sys_write_place(STDOUT, "Press ESC to exit", 33, 740, 35);
-    while (getChar() == 0) {
+    while (getCharNoBlock() == 0) {
         ;
     }
 

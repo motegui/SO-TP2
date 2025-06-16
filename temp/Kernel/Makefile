@@ -1,7 +1,16 @@
 include Makefile.inc
 
+
+ifeq ($(BUDDY),1)
+    SOURCES_C := $(SOURCES_ALL) buddyMemManager.c
+    GCCFLAGS += -DUSE_BUDDY
+else
+    SOURCES_C := $(SOURCES_ALL) mm_manager.c
+endif
+
 KERNEL=kernel.bin
 SOURCES=$(wildcard *.c)
+SOURCES_ALL := $(filter-out buddyMemManager.c mm_manager.c, $(wildcard *.c))
 SOURCES_ASM=$(wildcard asm/*.asm)
 OBJECTS=$(SOURCES:.c=.o)
 OBJECTS_ASM=$(SOURCES_ASM:.asm=.o)

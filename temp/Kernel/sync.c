@@ -1,5 +1,6 @@
 #include "sync.h"
 #include <string.h>
+#include <videodriver.h>
 
 #define MAX_SEMAPHORES 32
 
@@ -36,21 +37,42 @@ int semClose(sem_t sem) {
 }
 
 int semWait(sem_t sem) {
+    printStringNColor("[SEM] wait 1\n", 24, (Color){255, 100, 255});
+
     if (sem == NULL || !sem->in_use)
         return -1;
 
-    enter_region(&sem->lock);
+    printStringNColor("[SEM] wait desp 1 if\n", 24, (Color){255, 100, 255});
+    printStringNColor("[SEM] lock val:\n", 24, (Color){255, 100, 255});
+    printInt(sem->lock);
+
+    while (!enter_region(&sem->lock)) {
+        printStringNColor("[SEM] enter region fail, blocking\n", 24, (Color){255, 100, 255});
+        int pid = get_current_process()->pid;
+        sem->blocked_pid = pid;
+        block_process(pid);
+        printStringNColor("[SEM] desp block\n", 24, (Color){255, 100, 255});
+        schedule(NULL);
+    }
+
+    printStringNColor("[SEM] desp enter region\n", 24, (Color){255, 100, 255});
+
     if (sem->value > 0) {
+        printStringNColor("[SEM] en 2 if\n", 24, (Color){255, 100, 255});
         sem->value--;
         leave_region(&sem->lock);
         return 0;
     }
+
     leave_region(&sem->lock);
+    printStringNColor("[SEM] desp leave region\n", 24, (Color){255, 100, 255});
 
     int pid = get_current_process()->pid;
     sem->blocked_pid = pid;
     block_process(pid);
+    printStringNColor("[SEM] desp block\n", 24, (Color){255, 100, 255});
     schedule(NULL);
+
     return 0;
 }
 
