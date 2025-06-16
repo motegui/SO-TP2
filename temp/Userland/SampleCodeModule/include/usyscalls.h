@@ -59,7 +59,6 @@ void sys_get_mem_status(uint64_t *used, uint64_t *free);
 
 int64_t sys_sem_create(uint64_t semName, uint64_t in_value);
 
-int64_t sys_sem_open(uint64_t semName) ;
 
 int64_t sys_sem_close(uint64_t semName);
 

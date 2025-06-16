@@ -14,7 +14,8 @@ typedef enum {
     READY,
     RUNNING,
     BLOCKED,
-    TERMINATED
+    TERMINATED,
+    ZOMBIE
 } ProcessState;
 
 
@@ -28,6 +29,7 @@ typedef struct PCB {
     int ticks;
     void *stack_base;
     void *stack_pointer;
+    int sem_id;
 } PCB;
 
 typedef struct PCBNode {
@@ -88,6 +90,7 @@ void kill_process(int pid);
 void get_pid();
 
 void list_processes(char *buffer, uint64_t length);
+
 int waitpid(int pid);
 
 #endif 

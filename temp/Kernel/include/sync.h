@@ -11,20 +11,17 @@
 #define MAX_SEMAPHORES 64
 #define SEM_NAME_LEN 32
 
-typedef struct {
-    char name[SEM_NAME_LEN];
-    int value;
-    int ref_count; //cantidad de procesos que estan usando el semaforo
-    Queue waiting_queue; //cola de procesos bloqueados esperando 
-    bool in_use;
-    uint8_t lock; // Lock proteger la zona crítica 
 
+typedef struct {
+    int value;
+    bool in_use;
+    uint8_t lock;
+    int blocked_pid; 
 } Semaphore;
 
 typedef Semaphore* sem_t;
 
-sem_t semCreate(char *name, int initValue);
-sem_t semOpen(const char *name);
+sem_t semCreate(int initValue);
 int semClose(sem_t sem);
 int semWait(sem_t sem);
 int semPost(sem_t sem);

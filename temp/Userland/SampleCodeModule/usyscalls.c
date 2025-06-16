@@ -124,9 +124,7 @@ int64_t sys_sem_create(uint64_t semName, uint64_t in_value) {
     return sys_call(27, semName, in_value, 0, 0, 0);
 }
 
-int64_t sys_sem_open(uint64_t semName) {
-    return sys_call(28, semName, 0, 0, 0, 0);
-}
+
 
 int64_t sys_sem_close(uint64_t semName) {
     return sys_call(29, semName, 0, 0, 0, 0);

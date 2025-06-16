@@ -115,6 +115,8 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     pcb->foreground = foreground;
     pcb->ticks = 0;
 
+ 
+
     printIntLn(pcb->pid);
     printStringNColor("[PM] parent\n", 24, (Color){155, 155, 155});
 
@@ -134,6 +136,10 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     pcb->stack_pointer = create_stack(stack_top, entry_point, args, &process_wrapper);
 
     pcb->state = READY;
+
+    char sem_name[16];
+    snprintf(sem_name, sizeof(sem_name), "sem_%d", pcb->pid);
+    pcb->sem_id = semCreate(0);
 
     add_active_process(pcb);
 
@@ -228,7 +234,7 @@ void remove_active_process(int pid) {
 
 void print_active_processes() {
     PCBNode *curr = active_processes;
-    const char *state_str[] = {"NEW", "READY", "RUNNING", "BLOCKED", "TERMINATED"};
+    const char *state_str[] = {"NEW", "READY", "RUNNING", "BLOCKED", "ZOMBIE", "TERMINATED"};
 
     ncPrint("PID\tNombre\t\tEstado\t\tPrioridad\tFG/BG\n");
     while (curr) {
@@ -371,27 +377,35 @@ void exit_process() {
         printStringNColor("[PM] shell morir\n", 28, (Color){255, 255, 0});
         return;
     }
+    printStringNColor("[EP] EXIT PROC\n", 24, (Color){200, 155, 155});
 
-    current->state = TERMINATED;
-    remove_active_process(current->pid);
-    schedule(NULL);
+    current->state = ZOMBIE;          // Marca como ZOMBIE
+    semPost(current->sem_id);         // Avisa al padre
+    schedule(NULL);                   // Cede CPU para que el padre siga
 }
 
 
-
-void kill_process(int pid){
+void kill_process(int pid) {
     PCB *target = get_process_by_pid(pid);
-    if (target) {
+    if (!target) {
+        ncPrint("Error: Proceso no encontrado.\n");
+        return;
+    }
+
+    if (target->state == ZOMBIE || get_process_by_pid(target->parent_pid) == NULL) {
+        printStringNColor("[KP] IF\n", 24, (Color){255, 255, 0});
+
+        target->state = TERMINATED;
         remove_active_process(target->pid);
         destroy_process(target);
+    } else {
+        printStringNColor("[KP] ELSE\n", 24, (Color){255, 255, 0});
+
+        target->state = ZOMBIE;
+        semPost(target->sem_id);
     }
-    else {
-        ncPrint("Error: Proceso no encontrado.\n");
-    }
-    schedule(NULL); // Reprogramar después de eliminar el proceso
-    ncPrint("Proceso con PID ");
-    ncPrintDec(pid);
-    ncPrint(" eliminado.\n");
+
+    schedule(NULL);  // Forzá cambio de contexto tras matar
 }
 
 
@@ -406,13 +420,13 @@ void get_pid() {
 }
 
 void list_processes(char *buffer, uint64_t length) {
-    static const char *state_str[] = {"NEW", "READY", "RUNNING", "BLOCKED", "TERMINATED"};
+    static const char *state_str[] = {"NEW", "READY", "RUNNING", "BLOCKED", "TERMINATED", "ZOMBIE"};
     PCBNode *curr = active_processes;
     int offset = 0;
 
     while (curr && offset < (int)length - 1) {
         PCB *pcb = curr->pcb;
-        const char *state = (pcb->state >= 0 && pcb->state <= 4) ? state_str[pcb->state] : "UNKNOWN";
+        const char *state = (pcb->state >= 0 && pcb->state <= 6) ? state_str[pcb->state] : "UNKNOWN";
         int written = snprintf(
             buffer + offset, length - offset,
             "PID: %d, Name: %s, State: %s, Priority: %d\n",
@@ -443,28 +457,18 @@ void test_process_manager() {
 */
 
 int waitpid(int pid) {
-    printStringNColor("[witpid] pid num:\n", 28, (Color){255, 255, 155});
-
-    printIntLn(pid);
-    printStringNColor("\n", 28, (Color){255, 255, 155});
-
     PCB *current_proc = get_current_process();
     if (!current_proc) return -1;
 
     PCB *target = get_process_by_pid(pid);
     if (!target || target->parent_pid != current_proc->pid) {
-            printStringNColor("[PM] if\n", 28, (Color){255, 255, 155});
-
-        // No existe o no es hijo del proceso actual
         return -1;
     }
+    printStringNColor("[WP] ANT WAIT\n", 24, (Color){255, 255, 0});
 
-    // Esperar mientras el hijo no haya terminado
-    while (target->state != TERMINATED) {
-        yield();  // Cede CPU y sigue esperando
-        target = get_process_by_pid(pid); // Refrescamos (por si fue eliminado)
-        if (!target) break; // Ya fue eliminado
-    }
-
-    return 0;
+    semWait(target->sem_id);          // Bloquea y espera al hijo
+    printStringNColor("[WP] DESP WAIT\n", 24, (Color){255, 255, 0});
+    kill_process(target->pid);        // Hace cleanup
+    return pid;
 }
+

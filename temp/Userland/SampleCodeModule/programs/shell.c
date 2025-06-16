@@ -41,6 +41,12 @@ int sscanf(const char *str, const char *format, int *a, int *b) {
     }
     return 0;
 }
+int wait(int pid, int piped, int background) {
+	if (!piped && !background)
+		sys_wait_pid(pid);
+	return pid;
+}
+
 
 
 static char *commandsNames[] = {
@@ -78,12 +84,14 @@ void shell() {
 	int count = 0;	
 	char buffer[1024] = {0};
 	char oldBuffer[1024] = {0};
+	int defaultFds[2] = {0, 1};
+
 	char flag = 0; // Used for up arrow
 	while(1) {
 		unsigned char c = getChar();
 		if (c == '\n') {
 			buffer[count] = 0;
-			analizeBuffer(buffer, count);
+			analizeBuffer(buffer, count, 0, defaultFds);
 			printColor("\nHomerOS: $> ", GREEN);
 			strcpy(oldBuffer, buffer);
 			flag = 1;
@@ -155,7 +163,8 @@ int isBackground(char * buff) {
 }
 
 
-void analizeBuffer(char * buffer, int count) {
+void analizeBuffer(char * buffer, int count, int piped, int *fds) {
+
 	if (count <= 0)
 		return;
 
@@ -185,7 +194,7 @@ void analizeBuffer(char * buffer, int count) {
 		printColor("[INFO] proceso creado. Esperando que termine...\n", GREEN);
 		printf("[INFO] pid = %d\n", pid);
 		sys_wait_pid(pid);
-		printColor("[INFO] proceso pong termino\n", GREEN);
+		printColor("[INFO] proceso pong termino\n", GREEN);	
 	}
 	 else if (commandMatch(buffer, "div0", count)) {
 		divideByZero();
@@ -206,8 +215,12 @@ void analizeBuffer(char * buffer, int count) {
         char procBuffer[1024];
         sys_list_processes(procBuffer, sizeof(procBuffer));
         printColor(procBuffer, CYAN); 
-    }
-
+    } else if (commandMatch(buffer, "cat", count)) {
+		char * args[2] = {"cat", NULL};
+		int pid = sys_create_process("cat", !background, 1, &cat, args);
+		return wait(pid, piped, background);
+	}
+	
 	// else if (commandMatch(buffer, "testmm", count)) {
 	// 	parseCommand(testmmArgs, buffer, 3);
 	// 	int pid = sys_create_process("testmm", testmmArgs, &test_mm, !background, fds);

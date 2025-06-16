@@ -36,8 +36,8 @@ int pipe_open(const char *name){
             snprintf(filled_name, sizeof(filled_name), "%s_filled", name);
             snprintf(empty_name, sizeof(empty_name), "%s_empty", name);
 
-            pipe_table[i].filled_slots = semCreate(filled_name, 0);
-            pipe_table[i].empty_slots = semCreate(empty_name, PIPE_BUFFER_SIZE);
+            pipe_table[i].filled_slots = semCreate(0);
+            pipe_table[i].empty_slots = semCreate(PIPE_BUFFER_SIZE);
 
             return i;
         }
