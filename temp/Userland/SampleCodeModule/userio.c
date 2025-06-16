@@ -205,9 +205,3 @@ char * getDate() {
 	sys_get_date(bufferDate);
 	return bufferDate;
 }
-
-char getCharNoBlock() {
-	char c[] = {0};
-	sys_read_no_block(0, c, 1);
-	return c[0];
-}

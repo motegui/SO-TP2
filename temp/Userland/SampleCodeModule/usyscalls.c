@@ -137,13 +137,5 @@ int64_t sys_sem_post(uint64_t semName) {
 }
 
 uint64_t sys_wait_pid(uint64_t pid){
-<<<<<<< Updated upstream
     return sys_call(32, pid,0,0,0,0);
-=======
-    return sys_call(35, pid,0,0,0,0);
-}
-
-uint64_t sys_read_no_block(unsigned int fd, char * buffer, unsigned int size) {
-	return sys_call(36,fd,  buffer,size, 1,0);
->>>>>>> Stashed changes
 }

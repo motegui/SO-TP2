@@ -2,18 +2,6 @@
     "files.associations": {
         "scheduler.h": "c",
         "sync.h": "c",
-<<<<<<< Updated upstream
         "mm_manager.h": "c"
-=======
-        "mm_manager.h": "c",
-        "usyscalls.h": "c",
-        "process_manager.h": "c",
-        "sound.h": "c",
-        "keyboard.h": "c",
-        "sounds.h": "c",
-        "userio.h": "c",
-        "colors.h": "c",
-        "videodriver.h": "c"
->>>>>>> Stashed changes
     }
 }

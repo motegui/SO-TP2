@@ -99,18 +99,7 @@ char *strdup_kernel(const char *src) {
     return dest;
 }
 
-<<<<<<< Updated upstream
 PCB *create_process(const char *name, int parent_pid, int priority, bool foreground) {
-=======
-uint64_t getCurrentPID() {
-	return current_process->pid;
-}
-
-PCB *create_process(const char *name, int parent_pid, int priority, bool foreground, void *entry_point, char **args){
-    printStringNColor("[PM] create proc pid:\n", 24, (Color){144, 144, 134});
-
-
->>>>>>> Stashed changes
     PCB *pcb = allocMemory(globalMemoryManager, sizeof(PCB));
     if (!pcb) return NULL;
 

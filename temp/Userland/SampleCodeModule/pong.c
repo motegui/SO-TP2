@@ -177,7 +177,7 @@ void win(int color, int player) {
         winner = "Player 2 wins!";
     }
 
-    while (getCharNoBlock() != 0) {
+    while (getChar() != 0) {
         ; // Cleans buffer
     }
 
@@ -185,7 +185,7 @@ void win(int color, int player) {
     sys_write_color(STDOUT, "\n\nPress R to play again or any key to continue...", 49, color);
     
     char c;
-    while ((c = getCharNoBlock()) == 0) {
+    while ((c = getChar()) == 0) {
         ;
     }
 
@@ -254,7 +254,7 @@ void pong() {
     sys_write_color(STDOUT, "Press any key to start...", 25, WHITE);
     sys_write_place(STDOUT, "Press P to pause/unpause the game", 33, 740, 15);
     sys_write_place(STDOUT, "Press ESC to exit", 33, 740, 35);
-    while (getCharNoBlock() == 0) {
+    while (getChar() == 0) {
         ;
     }
 
@@ -283,7 +283,7 @@ void pong() {
         while (!goalMade) {
             unsigned char c;
             do {
-                c = getCharNoBlock();
+                c = getChar();
                 handleKey(c, moves);
             } while (c != 0 && c != 1 && c != 'p');
 
@@ -311,7 +311,7 @@ void pong() {
             if (c == 'p') {
                 sys_draw_rectangle(440, 35, 18*8, 20, BLACK);
                 sys_write_place(STDOUT, "PAUSED", 6, 485, 35);
-                while (getCharNoBlock() != 'p') {
+                while (getChar() != 'p') {
                     ;
                 }
                 sys_draw_rectangle(440, 35, 18*8, 20, BLACK);
