@@ -38,5 +38,6 @@ void fillRegisters();
 char * getTime();
 
 char * getDate();
+char getCharNoBlock();
 
 #endif

@@ -12,7 +12,8 @@ static int writeIndex = 0;
 
 static char shiftPressed = 0;
 static char capsLocked = 0;
-
+static char ctrlPressed = 0;
+int semaphoreId;
 static const char charHexMap[256] = {       
         0,  1/*esc*/,  '1',  '2',  '3',  '4',  '5',  '6',   '7',  '8',  '9',   '0',   '\'',  '<', '\b',
     '\t', 'q',  'w',  'e',  'r',  't',  'y',  'u',  'i',   'o',  'p',  '\\',   '+', '\n',   
@@ -38,52 +39,96 @@ char isLetter(unsigned char key) {
 }
 
 void keyboard_handler() {
-    unsigned char key = getKey();
-    if (key < 83 || key == 0xAA/* Release SHIFT */ || key == 0x3A /* CAPS Lock */) { // 83 elems in the charHexMap
-        if (elemCount >= BUFFER_SIZE) return;  // buffer is full
-        
-        // make the array circular
-        if (writeIndex >= BUFFER_SIZE)
-            writeIndex = 0;
+	unsigned char key = getKey();
+	if (key == CAPS_LOCK || key == RELEASE_SHIFT || key == RELEASE_LEFT_CTRL ||
+	    key < 83) {  // 83 elems in the charHexMap
+		if (elemCount >= BUFFER_SIZE)
+			return;  // buffer is full
 
-        if (charHexMap[key] == 5 && !shiftPressed) { // Shift key
-            shiftPressed = 1;
-            return;
-        }
-        if (key == 0xAA) { // Shift released
-            shiftPressed = 0;
-            return;
-        }
-        if (key == 0x3A) { // Caps Lock
-            capsLocked = !capsLocked;
-            return;
-        }
+		// make the array circular
+		if (writeIndex >= BUFFER_SIZE)
+			writeIndex = 0;
 
-        buffer[writeIndex] = !isLetter(key) ? (shiftPressed ? charCapsHexMap[key] : charHexMap[key]): ((shiftPressed && !capsLocked) || (!shiftPressed && capsLocked)) ? charCapsHexMap[key] : charHexMap[key];
+		if (charHexMap[key] == 5 && !shiftPressed) {  // Shift key
+			shiftPressed = 1;
+			return;
+		}
+		if (key == RELEASE_SHIFT) {  // Shift released
+			shiftPressed = 0;
+			return;
+		}
+		if (key == CAPS_LOCK) {  // Caps Lock
+			capsLocked = !capsLocked;
+			return;
+		}
+		if (key == LEFT_CTRL) {
+			ctrlPressed = 1;
+			return;
+		}
+		if (key == RELEASE_LEFT_CTRL) {
+			ctrlPressed = 0;
+			return;
+		}
 
-        // update iterators
-        elemCount++;
-        writeIndex++;
-    } else {
-        buffer[writeIndex] = key;
-        elemCount++;
-        writeIndex++;
-    }
+		if (ctrlPressed) {
+			if (charHexMap[key] == 'c') {
+				if (kill_process(getCurrentPID()) != 0)
+					printStringColor("\nHomerOS: $> ", GREEN);
+				return;
+			}
+			if (charHexMap[key] == 'l') {
+				clearScreen();
+				printStringColor("\nHomerOS: $> ", GREEN);
+				return;
+			}
+			if (charHexMap[key] == 'd') {
+				buffer[writeIndex] = -1;
+				elemCount++;
+				writeIndex++;
+				semPost(semaphoreId);
+				return;
+			}
+		}
+
+		buffer[writeIndex] = !isLetter(key) ? (shiftPressed ? charCapsHexMap[key] : charHexMap[key])
+		                     : ((shiftPressed && !capsLocked) || (!shiftPressed && capsLocked)) ? charCapsHexMap[key]
+		                                                                                        : charHexMap[key];
+
+		// update iterators
+		elemCount++;
+		writeIndex++;
+	} else {
+		buffer[writeIndex] = key;
+		elemCount++;
+		writeIndex++;
+	}
+	semPost(semaphoreId);
 }
 
+
 char getChar() {
-    if (elemCount == 0) { 
-        return 0; // buffer is empty
-    }
+	semWait(semaphoreId);
 
-    char toReturn = buffer[readIndex];
-    
-    // update iterators
-    elemCount--;
-    readIndex++;
+	char toReturn = buffer[readIndex];
 
-    // make the array circular
-    if (readIndex == BUFFER_SIZE) readIndex = 0;
-    
-    return toReturn;
+	// update iterators
+	elemCount--;
+	readIndex++;
+
+	// make the array circular
+	if (readIndex == BUFFER_SIZE)
+		readIndex = 0;
+
+	return toReturn;
+}
+
+char getCharNoBlock() {
+	if (elemCount == 0)
+		return 0;
+
+	return getChar();
+}
+
+void initKeyboard() {
+	semaphoreId = semCreate(0);
 }

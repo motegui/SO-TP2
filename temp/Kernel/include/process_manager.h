@@ -84,5 +84,6 @@ void get_pid();
 
 void list_processes(char *buffer, uint64_t length);
 int waitpid(int pid);
+uint64_t getCurrentPID();
 
 #endif 

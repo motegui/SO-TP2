@@ -162,8 +162,20 @@ void analizeBuffer(char * buffer, int count) {
 	} else if (commandMatch(buffer, "clear", count)) {
 		sys_clear_screen();
 	} else if (commandMatch(buffer, "pong", count)) {
+<<<<<<< Updated upstream:temp/Userland/SampleCodeModule/shell.c
 		pong();
 	} else if (commandMatch(buffer, "div0", count)) {
+=======
+		printColor("[INFO] creando proceso pong\n", GREEN);
+		char * args[] = { "pong", NULL };
+		int pid = sys_create_process("pong", 1, 1, &pong, args);
+		printColor("[INFO] proceso creado. Esperando que termine...\n", GREEN);
+		printf("[INFO] pid = %d\n", pid);
+		// sys_wait_pid(pid);
+		printColor("[INFO] proceso pong termino\n", GREEN);	
+	}
+	 else if (commandMatch(buffer, "div0", count)) {
+>>>>>>> Stashed changes:temp/Userland/SampleCodeModule/programs/shell.c
 		divideByZero();
 	} else if (commandMatch(buffer, "invalidop", count)) {
 		invalidOpcode();
@@ -172,6 +184,7 @@ void analizeBuffer(char * buffer, int count) {
 		sys_draw_image(diego, 100, 100);
 		playBSong();
 		sys_clear_screen();
+<<<<<<< Updated upstream:temp/Userland/SampleCodeModule/shell.c
 	} else if (commandMatch(buffer, "mem", count)) {
     	uint64_t used = 0, free = 0;
     	sys_get_mem_status(&used, &free);
@@ -222,6 +235,22 @@ void analizeBuffer(char * buffer, int count) {
     	}else {
         	printfColor("Wc process created with PID %d\n", GREEN, pid);
     	}
+=======
+	} else if (commandMatch(buffer, "loop", count)) {
+        printColor("LOOP iniciado\n", GREEN);
+        char * args[2] = {"loop", NULL};
+        int pid = sys_create_process("loop", 1, 1, &loop_a_main, args);
+		sys_wait_pid(pid);
+        return;
+    } else if (commandMatch(buffer, "ps", count)) {
+        char procBuffer[1024];
+        sys_list_processes(procBuffer, sizeof(procBuffer));
+        printColor(procBuffer, CYAN); 
+    } else if (commandMatch(buffer, "cat", count)) {
+		char * args[2] = {"cat", NULL};
+		int pid = sys_create_process("cat", !background, 1, &cat, args);
+		// return wait(pid, piped, background);
+>>>>>>> Stashed changes:temp/Userland/SampleCodeModule/programs/shell.c
 	}
 
 	// else if (commandMatch(buffer, "testmm", count)) {
