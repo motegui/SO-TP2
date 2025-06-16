@@ -39,9 +39,9 @@ void test_prio() {
 
     sys_write(1, "UNBLOCKING...\n", 14);
 
-    for (i = 0; i < TOTAL_PROCESSES; i++)
+    for (i = 0; i < TOTAL_PROCESSES; i++){
         sys_unblock_process(pids[i]);
-
+}
     bussy_wait(WAIT);
     sys_write(1, "\nKILLING...\n", 12);
 

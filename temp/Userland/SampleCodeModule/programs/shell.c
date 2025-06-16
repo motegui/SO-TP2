@@ -9,7 +9,7 @@
 #include <tests.h>
 #include <stddef.h>
 #include <programs.h>
-#define COMMANDS_QUANTITY (sizeof(commandsNames) / sizeof(char *))
+#define COMMANDS_QUANTITY 22
 char * testmmArgs[3];
 
 extern int loop_a_main(int argc, char **argv);
@@ -51,7 +51,7 @@ int wait(int pid, int piped, int background) {
 
 static char *commandsNames[] = {
     "help", "time", "date", "registers", "fillregs", "div0", "invalidop", "pong", "clear",
-    "mem", "ps", "kill", "nice", "block", "unblock", "testmm", "cat", 
+    "mem", "ps", "kill", "nice", "block", "unblock", "cat", "test_mm", "test_sync", "test_prio", "test_processes"
 };
 
 static char *commands[] = {
@@ -70,10 +70,13 @@ static char *commands[] = {
     "\tnice <pid> <priority>: changes the priority of the process.\n",
     "\tblock <pid>: blocks the process with the given pid.\n",
     "\tunblock <pid>: unblocks the process with the given pid.\n",
-	"\ttestmm: test memory manager.\n",
 	"\tcat: prints stdin as it is received.\n",
     "\tfilter: prints stdin without vowels.\n",
     "\twc: counts the number of lines from stdin.\n",
+	"\ttest_mm: test memory manager.\n",
+	"\ttest_sync: test synchronization (semaphores).\n",
+    "\ttest_prio: test process priorities.\n",
+    "\ttest_processes: test process creation, kill, block, unblock.\n",
 };
 
 void shell() {
@@ -221,15 +224,34 @@ void analizeBuffer(char * buffer, int count, int piped, int *fds) {
 		return wait(pid, piped, background);
 	}
 	
-	else if (commandMatch(buffer, "testmm", count)) {
+	else if (commandMatch(buffer, "test_mm", count)) {
 		char *args[] = { "2048", NULL };
 		int pid = sys_create_process("testmm", 1, 1, &test_mm, args);
 		if (!background)
 			sys_wait_pid(pid);
 		return pid;
 	}
+	else if (commandMatch(buffer, "test_sync", count)) {
+        char *args[] = { "1000", "1", NULL }; // ejemplo de argumentos: n=1000, use_sem=1
+        int pid = sys_create_process("testsync", 1, 1, &test_sync, args);
+        if (!background)
+            sys_wait_pid(pid);
+        return pid;
+    }
+    else if (commandMatch(buffer, "test_prio", count)) {
+        int pid = sys_create_process("testprio", 1, 1, &test_prio, NULL);
+        if (!background)
+            sys_wait_pid(pid);
+        return pid;
+    }
+    else if (commandMatch(buffer, "test_processes", count)) {
+        char *args[] = { "10", NULL }; // ejemplo: máximo 10 procesos
+        int pid = sys_create_process("testprocesses", 1, 1, &test_processes, args);
+        if (!background)
+            sys_wait_pid(pid);
+        return pid;
+    }
 	else {
-		// Intentar ejecutar el comando como un programa userland
 			printfColor("\nCommand not found. Type \"help\" for command list\n", RED);
     }
 }

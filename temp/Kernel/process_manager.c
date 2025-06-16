@@ -330,12 +330,13 @@ void block_process(int pid){
 }
 
 void unblock_process(int pid){
-    PCB * target = get_process_by_pid((int) pid);
-    if(!target || target->state == TERMINATED){
+    PCB * target = get_process_by_pid(pid);
+    if(!target || target->state == TERMINATED || target->state != BLOCKED){
         return;
     }
     set_process_state(target, READY);
 }
+
 
 void yield() {
 
@@ -381,7 +382,7 @@ void exit_process() {
 
     current->state = ZOMBIE;          // Marca como ZOMBIE
     semPost(current->sem_id);         // Avisa al padre
-    schedule(NULL);                   // Cede CPU para que el padre siga
+    __asm__ volatile("hlt");
 }
 
 
@@ -469,6 +470,7 @@ int waitpid(int pid) {
     semWait(target->sem_id);          // Bloquea y espera al hijo
     printStringNColor("[WP] DESP WAIT\n", 24, (Color){255, 255, 0});
     kill_process(target->pid);        // Hace cleanup
+    printStringNColor("[WAITPID] desbloqueado\n", 24, (Color){0, 255, 0});
     return pid;
 }
 

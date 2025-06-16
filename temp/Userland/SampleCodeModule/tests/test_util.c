@@ -39,7 +39,9 @@ void free(void *ptr) {
 
 // Busy wait
 void bussy_wait(uint64_t n) {
-    for (volatile uint64_t i = 0; i < n; i++);
+    for (volatile uint64_t i = 0; i < n; i++) {
+        sys_yield();
+    }
 }
 
 // Endless loop

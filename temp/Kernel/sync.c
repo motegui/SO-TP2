@@ -77,6 +77,7 @@ int semWait(sem_t sem) {
 }
 
 int semPost(sem_t sem) {
+
     if (sem == NULL || !sem->in_use)
         return -1;
 

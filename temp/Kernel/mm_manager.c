@@ -42,18 +42,31 @@ void *allocMemory(MemoryManagerADT const restrict memoryManager, const size_t me
 }
 
 
+
 int freeMemory(MemoryManagerADT const restrict memoryManager, void *const memoryToFree) {
-	Block *curr = memoryManager->blockList;
-	while (curr != NULL) {
-		if (curr->address == memoryToFree) {
-			if (curr->is_free)
-				return 2;
-			curr->is_free = true;
-			return 0;
-		}
-		curr = curr->next;
-	}
-	return 1; 
+    Block *curr = memoryManager->blockList;
+    while (curr != NULL) {
+        if (curr->address == memoryToFree) {
+            if (curr->is_free)
+                return 2;
+            curr->is_free = true;
+
+            Block *scan = memoryManager->blockList;
+            while (scan != NULL) {
+                if (scan != curr && scan->is_free && 
+                    (char*)scan->address + scan->size == (char*)curr->address) {
+                    scan->size += sizeof(Block) + curr->size;
+                    scan->next = curr->next;
+                    curr = scan;
+                }
+                scan = scan->next;
+            }
+
+            return 0;
+        }
+        curr = curr->next;
+    }
+    return 1;
 }
 
 void getMemoryStatus(MemoryManagerADT const restrict memoryManager, size_t *used, size_t *free) {
