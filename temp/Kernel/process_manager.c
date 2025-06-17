@@ -342,7 +342,7 @@ void yield() {
 
     PCB *current = get_current_process();
     set_process_state(current, READY);
-    schedule(NULL);
+    __asm__ volatile("int $0x20");
 }
 
 void wait_for_children(){
@@ -382,7 +382,7 @@ void exit_process() {
 
     current->state = ZOMBIE;          // Marca como ZOMBIE
     semPost(current->sem_id);         // Avisa al padre
-    __asm__ volatile("hlt");
+    __asm__ volatile("int $0x20");
 }
 
 
