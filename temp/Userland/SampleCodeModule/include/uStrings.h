@@ -13,7 +13,7 @@ int strtoi(char * buffer, int * i);
 
 void intToStr(int num, char* str);
 
-void intToHex(uint64_t num, char* hex);
+void int_to_hex(uint64_t num, char* hex);
 
 unsigned int strlen(char* str);
 

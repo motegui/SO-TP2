@@ -4,106 +4,16 @@
 #include <stdint.h>
 #include "scheduler.h"
 #include <videodriver.h>
-
-int int_to_str(int value, char *str) {
-    char temp[12];
-    int i = 0, j = 0;
-    int is_negative = 0;
-
-    if (value == 0) {
-        str[0] = '0';
-        str[1] = '\0';
-        return 1;
-    }
-
-    if (value < 0) {
-        is_negative = 1;
-        value = -value;
-    }
-
-    while (value > 0) {
-        temp[i++] = (value % 10) + '0';
-        value /= 10;
-    }
-
-    if (is_negative) {
-        temp[i++] = '-';
-    }
-
-    while (i > 0) {
-        str[j++] = temp[--i];
-    }
-
-    str[j] = '\0';
-    return j;
-}
-
-int snprintf(char *buffer, uint64_t size, const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-
-    uint64_t offset = 0;
-    for (const char *p = fmt; *p && offset < size - 1; ++p) {
-        if (*p == '%') {
-            p++; // Avanzamos al especificador
-            if (!*p) break;
-
-            if (*p == 'd') {
-                int val = va_arg(args, int);
-                char temp[12];
-                int len = int_to_str(val, temp);
-                for (int i = 0; i < len && offset < size - 1; i++)
-                    buffer[offset++] = temp[i];
-            } else if (*p == 's') {
-                const char *str = va_arg(args, const char*);
-                while (*str && offset < size - 1)
-                    buffer[offset++] = *str++;
-            } else if (*p == 'c') {
-                char c = (char)va_arg(args, int);
-                if (offset < size - 1)
-                    buffer[offset++] = c;
-            } else {
-                // No reconocido, lo copiamos literalmente
-                if (offset < size - 1) buffer[offset++] = '%';
-                if (offset < size - 1) buffer[offset++] = *p;
-            }
-        } else {
-            buffer[offset++] = *p;
-        }
-    }
-
-    buffer[offset] = '\0';
-    va_end(args);
-    return offset;
-}
-
-
+#include <print_utils.h>
 
 extern MemoryManagerADT globalMemoryManager;
-
 static PCBNode *active_processes = NULL;
 static PCB *current_process = NULL;
 static int next_pid = 1;
 
-// Función auxiliar para duplicar cadenas sin strdup
-char *strdup_kernel(const char *src) {
-    size_t len = 0;
-    while (src[len]) len++;
 
-    char *dest = allocMemory(globalMemoryManager, len + 1);
-    if (!dest) return NULL;
-
-    for (size_t i = 0; i <= len; i++) {
-        dest[i] = src[i];
-    }
-
-    return dest;
-}
 
 PCB *create_process(const char *name, int parent_pid, int priority, bool foreground, void *entry_point, char **args){
-    printStringNColor("[PM] create proc pid:\n", 24, (Color){144, 144, 134});
-
-
     PCB *pcb = allocMemory(globalMemoryManager, sizeof(PCB));
     if (!pcb) return NULL;
 
@@ -115,14 +25,7 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     pcb->foreground = foreground;
     pcb->ticks = 0;
 
- 
-
-    printIntLn(pcb->pid);
-    printStringNColor("[PM] parent\n", 24, (Color){155, 155, 155});
-
-    printIntLn(pcb->parent_pid);
-
-    // Asignar stack (8KB)
+    // Asignar stack
     pcb->stack_base = allocMemory(globalMemoryManager, 8192);
     if (!pcb->stack_base) {
         freeMemory(globalMemoryManager, pcb->name);
@@ -139,13 +42,27 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
 
     char sem_name[16];
     snprintf(sem_name, sizeof(sem_name), "sem_%d", pcb->pid);
-    pcb->sem_id = semCreate(0);
+    pcb->sem_id = sem_create(0);
 
     add_active_process(pcb);
 
     
     return pcb;
     
+}
+// Función auxiliar para duplicar cadenas sin strdup
+char *strdup_kernel(const char *src) {
+    size_t len = 0;
+    while (src[len]) len++;
+
+    char *dest = allocMemory(globalMemoryManager, len + 1);
+    if (!dest) return NULL;
+
+    for (size_t i = 0; i <= len; i++) {
+        dest[i] = src[i];
+    }
+
+    return dest;
 }
 
 void *create_stack(void *stack_top, void *entry_point, char **args, void *wrapper) {
@@ -182,14 +99,8 @@ void *create_stack(void *stack_top, void *entry_point, char **args, void *wrappe
 
 
 void process_wrapper(int (*entry_point)(int, char **), char **args) {
-    printStringNColor("[PM] wrapper 1 \n", 24, (Color){255, 255, 0});
-
     ((int (*)(int, char **))entry_point)(1, args);
-    printStringNColor("[PM] wrapper 2 \n", 24, (Color){255, 255, 0});
-
     exit_process();
-    printStringNColor("[PM] wrapper 3 \n", 24, (Color){255, 255, 0});
-
 }
 
 void set_process_state(PCB *pcb, ProcessState new_state) {
@@ -369,22 +280,18 @@ void wait_for_children(){
 }
 
 void exit_process() {
-    printStringNColor("[PM] exit\n", 28, (Color){255, 255, 0});
-
     PCB *current = get_current_process();
     if (!current) return;
 
     if (strcmp(current->name, "sh") == 0) {
-        printStringNColor("[PM] shell morir\n", 28, (Color){255, 255, 0});
         return;
     }
-    printStringNColor("[EP] EXIT PROC\n", 24, (Color){200, 155, 155});
 
-    current->state = ZOMBIE;          // Marca como ZOMBIE
-    semPost(current->sem_id);         // Avisa al padre
+    current->state = ZOMBIE;
+    sem_post(current->sem_id);
+
     __asm__ volatile("int $0x20");
 }
-
 
 void kill_process(int pid) {
     PCB *target = get_process_by_pid(pid);
@@ -394,19 +301,16 @@ void kill_process(int pid) {
     }
 
     if (target->state == ZOMBIE || get_process_by_pid(target->parent_pid) == NULL) {
-        printStringNColor("[KP] IF\n", 24, (Color){255, 255, 0});
 
         target->state = TERMINATED;
         remove_active_process(target->pid);
         destroy_process(target);
     } else {
-        printStringNColor("[KP] ELSE\n", 24, (Color){255, 255, 0});
-
         target->state = ZOMBIE;
-        semPost(target->sem_id);
+        sem_post(target->sem_id);
+
     }
 
-    schedule(NULL);  // Forzá cambio de contexto tras matar
 }
 
 
@@ -447,17 +351,7 @@ void list_processes(char *buffer, uint64_t length) {
         buffer[length - 1] = '\0';
 }
 
-/*
-void test_process_manager() {
-    PCB *p1 = create_process("proc1", 0, 1, true);
-    PCB *p2 = create_process("proc2", 0, 2, false);
-    print_active_processes();
-    remove_active_process(p1->pid);
-    print_active_processes();
-}
-*/
-
-int waitpid(int pid) {
+int wait_pid(int pid) {
     PCB *current_proc = get_current_process();
     if (!current_proc) return -1;
 
@@ -465,12 +359,9 @@ int waitpid(int pid) {
     if (!target || target->parent_pid != current_proc->pid) {
         return -1;
     }
-    printStringNColor("[WP] ANT WAIT\n", 24, (Color){255, 255, 0});
 
-    semWait(target->sem_id);          // Bloquea y espera al hijo
-    printStringNColor("[WP] DESP WAIT\n", 24, (Color){255, 255, 0});
+    sem_wait(target->sem_id);          // Bloquea y espera al hijo
     kill_process(target->pid);        // Hace cleanup
-    printStringNColor("[WAITPID] desbloqueado\n", 24, (Color){0, 255, 0});
     return pid;
 }
 

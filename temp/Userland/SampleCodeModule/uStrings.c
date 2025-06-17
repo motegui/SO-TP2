@@ -60,7 +60,7 @@ void intToStr(int num, char* str) {
 }
 
 // Convert 64 bit integer to hex string
-void intToHex(uint64_t num, char* hex) {
+void int_to_hex(uint64_t num, char* hex) {
     int i = 0;
     for (i = 15; i >= 0; i--) {
         int aux = num & 0xF;

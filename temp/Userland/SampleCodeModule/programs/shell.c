@@ -51,7 +51,7 @@ int wait(int pid, int piped, int background) {
 
 static char *commandsNames[] = {
     "help", "time", "date", "registers", "fillregs", "div0", "invalidop", "pong", "clear",
-    "mem", "ps", "kill", "nice", "block", "unblock", "cat", "test_mm", "test_sync", "test_prio", "test_processes"
+    "mem", "ps", "kill", "nice", "block", "unblock", "cat","wc", "filter", "test_mm", "test_sync", "test_prio", "test_processes"
 };
 
 static char *commands[] = {
@@ -91,7 +91,7 @@ void shell() {
 
 	char flag = 0; // Used for up arrow
 	while(1) {
-		unsigned char c = getChar();
+		unsigned char c = get_char();
 		if (c == '\n') {
 			buffer[count] = 0;
 			analizeBuffer(buffer, count, 0, defaultFds);
@@ -101,7 +101,7 @@ void shell() {
 			count = 0;
 		} else if (c == '\b') {
 			if (count > 0) {
-				printChar(c);
+				print_char(c);
 				count--;
 			}
 		} else if (c == '\t') {
@@ -112,7 +112,7 @@ void shell() {
 			}
 			if (i < COMMANDS_QUANTITY) {
 				while (commandsNames[i][count] != 0) {
-					printChar(commandsNames[i][count]);
+					print_char(commandsNames[i][count]);
 					buffer[count] = commandsNames[i][count];
 					count++;
 				}
@@ -120,7 +120,7 @@ void shell() {
 		} else if (c == 17 && flag) {
 			// up arrow
 			while (count > 0) {
-				printChar('\b');
+				print_char('\b');
 				count--;
 			}
 			strcpy(buffer, oldBuffer);
@@ -130,12 +130,12 @@ void shell() {
 		} else if (c == 20 && !flag) {
 			// down arrow
 			while (count > 0) {
-				printChar('\b');
+				print_char('\b');
 				count--;
 			}
 			flag = 1;
 		} else if (c > 20 && c < 127) {
-			printChar(c);
+			print_char(c);
 			buffer[count++] = c;
 			buffer[count] = 0;
 		}
@@ -191,13 +191,9 @@ void analizeBuffer(char * buffer, int count, int piped, int *fds) {
 	} else if (commandMatch(buffer, "clear", count)) {
 		sys_clear_screen();
 	} else if (commandMatch(buffer, "pong", count)) {
-		printColor("[INFO] creando proceso pong\n", GREEN);
 		char * args[] = { "pong", NULL };
 		int pid = sys_create_process("pong", 1, 1, &pong, args);
-		printColor("[INFO] proceso creado. Esperando que termine...\n", GREEN);
-		printf("[INFO] pid = %d\n", pid);
 		sys_wait_pid(pid);
-		printColor("[INFO] proceso pong termino\n", GREEN);	
 	}
 	 else if (commandMatch(buffer, "div0", count)) {
 		divideByZero();
@@ -209,7 +205,6 @@ void analizeBuffer(char * buffer, int count, int piped, int *fds) {
 		playBSong();
 		sys_clear_screen();
 	} else if (commandMatch(buffer, "loop", count)) {
-        printColor("LOOP iniciado\n", GREEN);
         char * args[2] = {"loop", NULL};
         int pid = sys_create_process("loop", 1, 1, &loop_a_main, args);
 		sys_wait_pid(pid);
@@ -251,6 +246,28 @@ void analizeBuffer(char * buffer, int count, int piped, int *fds) {
             sys_wait_pid(pid);
         return pid;
     }
+	else if (commandMatch(buffer, "phylo", count)) {
+        char *args[] = { "phylo", NULL };
+        int pid = sys_create_process("phylo", 1, 1, &phylo, args);
+        if (!background)
+            sys_wait_pid(pid);
+        return pid;
+    }
+	 else if (commandMatch(buffer, "cat", count)) {
+		char * args[2] = {"cat", NULL};
+		int pid = sys_create_process("cat", !background, 1, &cat, args);
+		return wait(pid, piped, background);
+	 }
+	 else if (commandMatch(buffer, "wc", count)) {
+		char * args[2] = {"wc", NULL};
+		int pid = sys_create_process("wc", !background, &fds, &wc, args);
+		return wait(pid, piped, background);
+	}
+	else if (commandMatch(buffer, "filter", count)) {
+		char * args[2] = {"filter", NULL};
+		int pid = sys_create_process("filter", !background, fds, &filter, args);
+		return wait(pid, piped, background);
+	}
 	else {
 			printfColor("\nCommand not found. Type \"help\" for command list\n", RED);
     }

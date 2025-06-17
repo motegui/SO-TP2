@@ -14,7 +14,7 @@ static int get_free_slot() {
     return -1;
 }
 
-sem_t semCreate(int initValue) {
+sem_t sem_create(int initValue) {
     int index = get_free_slot();
     if (index == -1)
         return NULL;
@@ -28,7 +28,7 @@ sem_t semCreate(int initValue) {
     return sem;
 }
 
-int semClose(sem_t sem) {
+int sem_close(sem_t sem) {
     if (sem == NULL || !sem->in_use)
         return -1;
 
@@ -36,37 +36,28 @@ int semClose(sem_t sem) {
     return 0;
 }
 
-int semWait(sem_t sem) {
-    printStringNColor("[SEM] wait 1\n", 24, (Color){255, 100, 255});
-
+int sem_wait(sem_t sem) {
     if (sem == NULL || !sem->in_use)
         return -1;
 
-    printStringNColor("[SEM] wait desp 1 if\n", 24, (Color){255, 100, 255});
-
     enter_region(&sem->lock);
-
     if (sem->value > 0) {
         sem->value--;
         leave_region(&sem->lock);
         return 0;
     }
-
-    // No hay recursos: bloqueamos
-    int pid = get_current_process()->pid;
-    sem->blocked_pid = pid;
+    // Bloqueamos el proceso actual
+    sem->blocked_pid = get_current_process()->pid;
     get_current_process()->state = BLOCKED;
-
     leave_region(&sem->lock);
-
-    printStringNColor("[SEM] desp block\n", 24, (Color){255, 100, 255});
     __asm__ volatile("int $0x20");
-
     return 0;
 }
 
 
-int semPost(sem_t sem) {
+
+int sem_post(sem_t sem) {
+    int to_unblock = sem->blocked_pid;
 
     if (sem == NULL || !sem->in_use)
         return -1;
@@ -76,7 +67,7 @@ int semPost(sem_t sem) {
     leave_region(&sem->lock);
 
     if (sem->blocked_pid != -1) {
-        unblock_process(sem->blocked_pid);
+        unblock_process(to_unblock);
         sem->blocked_pid = -1;
     }
 

@@ -36,8 +36,8 @@ int pipe_open(const char *name){
             snprintf(filled_name, sizeof(filled_name), "%s_filled", name);
             snprintf(empty_name, sizeof(empty_name), "%s_empty", name);
 
-            pipe_table[i].filled_slots = semCreate(0);
-            pipe_table[i].empty_slots = semCreate(PIPE_BUFFER_SIZE);
+            pipe_table[i].filled_slots = sem_create(0);
+            pipe_table[i].empty_slots = sem_create(PIPE_BUFFER_SIZE);
 
             return i;
         }
@@ -54,13 +54,13 @@ int pipe_write(int id, const char *src, unsigned int count){
     Pipe *pipe = &pipe_table[id];
 
     for (int i = 0; i < count; i++) {
-        semWait(pipe->empty_slots);
+        sem_wait(pipe->empty_slots);
 
         pipe->buffer[pipe->write_index] = src[i];
         pipe->write_index = (pipe->write_index + 1) % PIPE_BUFFER_SIZE;
         pipe->size++;
 
-        semPost(pipe->filled_slots);
+        sem_post(pipe->filled_slots);
     }
 
     return count;
@@ -74,7 +74,7 @@ int pipe_read(int id, char *dest, unsigned int count) {
     Pipe *pipe = &pipe_table[id];
 
     for (unsigned int i = 0; i < count; i++) {
-        semWait(pipe->filled_slots);
+        sem_wait(pipe->filled_slots);
 
         if (pipe->size == 0 && pipe->eof) {
             return i;
@@ -84,7 +84,7 @@ int pipe_read(int id, char *dest, unsigned int count) {
         pipe->read_index = (pipe->read_index + 1) % PIPE_BUFFER_SIZE;
         pipe->size--;
 
-        semPost(pipe->empty_slots);
+        sem_post(pipe->empty_slots);
     }
 
     return count;
@@ -97,8 +97,8 @@ void pipe_close(int id) {
 
     Pipe *pipe = &pipe_table[id];
 
-    semClose(pipe->filled_slots);
-    semClose(pipe->empty_slots);
+    sem_close(pipe->filled_slots);
+    sem_close(pipe->empty_slots);
 
     pipe->open = 0;
 

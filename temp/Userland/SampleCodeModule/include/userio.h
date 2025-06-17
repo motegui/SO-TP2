@@ -11,13 +11,13 @@ void print(char* string);
 
 void printColor(char* string, uint64_t color);
 
-void printChar(char c);
+void print_char(char c);
 
 void printColorChar(char c, uint64_t color);
 
-char getChar();
+char get_char();
 
-char getCharNoBlock();
+char get_char_no_block();
 
 void putChar(char c);
 

@@ -114,7 +114,7 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
 
 
 // static int64_t sys_read(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t shouldNotBlock) {
-//     char c = shouldNotBlock ? getCharNoBlock() : getChar();
+//     char c = shouldNotBlock ? get_char_no_block() : get_char();
 //     if (c == 0)
 //         return 0;
 
@@ -127,7 +127,7 @@ int64_t sys_read(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t shouldN
 		int i = 0;
 		char c;
 		char *buff = (char *)buffer;
-		while (i < length && (c = (shouldNotBlock ? getCharNoBlock() : getChar())) != 0) {
+		while (i < length && (c = (shouldNotBlock ? get_char_no_block() : get_char())) != 0) {
 			buff[i++] = c;
 		}
 		return i;
@@ -139,17 +139,17 @@ int64_t sys_read(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t shouldN
 
 static void sys_write(uint64_t fd, uint64_t buffer, uint64_t length) {
     if (fd == STDOUT) {
-        printStringN((char *) buffer, length);
+        print_stringN((char *) buffer, length);
     } else if (fd == STDERR) {
-        printStringNColor((char *) buffer, length, RED);
+        print_string_N_color((char *) buffer, length, RED);
     }
 }
 
 static void sys_write_place(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t x, uint64_t y) {
     if (fd == STDOUT) {
-        printStringPlace((char *) buffer, (int) x, (int) y, WHITE);
+        print_string_place((char *) buffer, (int) x, (int) y, WHITE);
     } else if (fd == STDERR) {
-        printStringPlace((char *) buffer, (int) x, (int) y, RED);
+        print_string_place((char *) buffer, (int) x, (int) y, RED);
     }
 }
 
@@ -159,7 +159,7 @@ static void sys_write_color(uint64_t fd, uint64_t buffer, uint64_t length, uint6
         c.r = (char) color;
         c.g = (char) (color >> 8);
         c.b = (char) (color >> 16);
-        printStringNColor((char *) buffer, length, c);
+        print_string_N_color((char *) buffer, length, c);
     }
 }
 
@@ -178,12 +178,12 @@ static void sys_get_date(uint64_t buffer) {
 }
 
 static void sys_clear_screen() {
-    clearScreen();
+    clear_screen();
 }
 
 
 static void sys_draw_rect(uint64_t x, uint64_t y, uint64_t width, uint64_t height, uint64_t color) {
-    drawRect( (int) x, (int) y, (int) width, (int) height, (int) color );
+    draw_rect( (int) x, (int) y, (int) width, (int) height, (int) color );
 }
 
 static void sys_play_sound(uint64_t freq, uint64_t duration, uint64_t waitAfter) {
@@ -193,15 +193,13 @@ static void sys_play_sound(uint64_t freq, uint64_t duration, uint64_t waitAfter)
 static void sys_get_screensize(uint64_t width, uint64_t height) {
     uint16_t * w = (uint16_t *) width;
     uint16_t * h = (uint16_t *) height;
-    *w = getWidth();
-    *h = getHeight();
+    *w = get_width();
+    *h = get_height();
 }
 
 static int64_t sys_create_process(uint64_t name, uint64_t priority, uint64_t foreground, uint64_t entry_point, uint64_t args) {
     PCB *pcb = create_process(name, get_current_process()->pid, priority, foreground, (void *) entry_point, args);
     if (!pcb) return -1;
-    printStringNColor("[sys] sys pid:\n", 24, (Color){100, 100, 100});
-    printIntLn(pcb->pid);
     return pcb->pid;
 }
 
@@ -218,7 +216,7 @@ static void sys_kill_process(int pid) {
 }
 
 static void sys_toggle_cursor() {
-    toggleCursor();
+    toggle_cursor();
 }
 
 static void sys_get_ticks(uint64_t ticks) {
@@ -227,7 +225,7 @@ static void sys_get_ticks(uint64_t ticks) {
 }
 
 static void sys_draw_image(uint64_t image, uint64_t width, uint64_t height) {
-    drawImage((const unsigned long int *) image, (int) width, (int) height);
+    draw_image((const unsigned long int *) image, (int) width, (int) height);
 }
 
 
@@ -270,20 +268,20 @@ static void sys_get_mem_status(uint64_t *used, uint64_t *free) {
 }
 
 static int64_t sys_sem_create(uint64_t  semName, uint64_t  in_value){
-    return (int64_t) semCreate((char*) semName, (int) in_value);
+    return (int64_t) sem_create((char*) semName, (int) in_value);
 }
 
 
 static int64_t sys_sem_close(uint64_t  semName) {
-    return (int64_t) semClose((char *) semName);
+    return (int64_t) sem_close((char *) semName);
 }
 
 static int64_t sys_sem_wait(uint64_t  semName) {
-    return (int64_t) semWait((char *) semName);
+    return (int64_t) sem_wait((char *) semName);
 }
 
 static int64_t sys_sem_post(uint64_t  semName) {
-    return (int64_t) semPost((char *) semName);
+    return (int64_t) sem_post((char *) semName);
 }
 
 static uint64_t sys_create_named_pipe(char * name){
@@ -299,7 +297,5 @@ static uint64_t sys_write_pipe(int pipe_id, char *buffer, int count){
 }
 
 static int64_t sys_wait_pid(uint64_t pid){
-    printStringColor("[KERNEL] sys_wait_pid recibiendo pid = ", WHITE);
-    printIntLn(pid);
-    return (int64_t) waitpid((int)pid);
+    return (int64_t) wait_pid((int)pid);
 }

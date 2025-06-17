@@ -50,7 +50,7 @@ VBEInfoPtr VBE_mode_info = (VBEInfoPtr) 0x0000000000005C00;
 #define MAX_LINES VBE_mode_info->height / CHAR_HEIGHT
 #define MAX_COLUMNS VBE_mode_info->width / CHAR_WIDTH - 1
 
-void putPixel(char r, char g, char b, int x, int y) {
+void put_pixel(char r, char g, char b, int x, int y) {
     char * videoPtr = (char *) ((uint64_t)VBE_mode_info->framebuffer);
     int offset = y * VBE_mode_info->pitch + x * (VBE_mode_info->bpp / 8);
     videoPtr[offset] = b;
@@ -58,18 +58,18 @@ void putPixel(char r, char g, char b, int x, int y) {
     videoPtr[offset+2] = r;
 }
 
-void drawWhiteLine() {
+void draw_white_line() {
     for(int i = 0; i < VBE_mode_info->width * (VBE_mode_info->bpp / 8); i++) {
-        putPixel(0xff, 0xff, 0xff, i, 3);
-        putPixel(0xff, 0xff, 0xff, i, 4);
-        putPixel(0xff, 0xff, 0xff, i, 5);
+        put_pixel(0xff, 0xff, 0xff, i, 3);
+        put_pixel(0xff, 0xff, 0xff, i, 4);
+        put_pixel(0xff, 0xff, 0xff, i, 5);
     }
 }
 
-void drawRect(int x, int y, int width, int height, int color) {
+void draw_rect(int x, int y, int width, int height, int color) {
 	for (int i = y; i < y + height; i++) {
 		for (int j = x; j < x + width; j++) {
-			putPixel(color >> 16, color >> 8, color, j, i);
+			put_pixel(color >> 16, color >> 8, color, j, i);
 		}
 	}
 }
@@ -77,16 +77,16 @@ void drawRect(int x, int y, int width, int height, int color) {
 int line = 1, column = 0;
 int showCursor = 1;
 
-char getPixel(int x, int y) {
+char get_pixel(int x, int y) {
 	char * videoPtr = (char *) ((uint64_t)VBE_mode_info->framebuffer);
 	int offset = y * VBE_mode_info->pitch + x * (VBE_mode_info->bpp / 8);
 	return videoPtr[offset];
 }
 
-char isSpaceEmpty(int x, int y) {
+char is_space_empty(int x, int y) {
 	for (int i = y; i < y + CHAR_HEIGHT; i++) {
 		for (int j = x; j < x + CHAR_WIDTH; j++) {
-			if (getPixel(j, i) != 0) {
+			if (get_pixel(j, i) != 0) {
 				return 0;
 			}
 		}
@@ -94,7 +94,7 @@ char isSpaceEmpty(int x, int y) {
 	return 1;
 }
 
-void printChar(char c, int x, int y, Color color) {
+void print_char(char c, int x, int y, Color color) {
 	if (c == '\b') {
 		if (x <= 0 && y <= 0)
 			return;
@@ -102,7 +102,7 @@ void printChar(char c, int x, int y, Color color) {
 			column -= 2;
 			for (int i = y; i < y + CHAR_HEIGHT; i++) {
 				for (int j = x - CHAR_WIDTH; j < x; j++) {
-					putPixel(0, 0, 0, j, i);
+					put_pixel(0, 0, 0, j, i);
 				}
 			}
 		} else if (line > 0) {
@@ -111,10 +111,10 @@ void printChar(char c, int x, int y, Color color) {
 			int c = 0;
 			for (int i = line * CHAR_HEIGHT; i < (line + 1) * CHAR_HEIGHT; i++) {
 				for (int j = (column + 1) * CHAR_WIDTH; j < (MAX_COLUMNS + 2) * CHAR_WIDTH; j++) {
-					putPixel(0, 0, 0, j, i);
+					put_pixel(0, 0, 0, j, i);
 				}
 			}
-			while (isSpaceEmpty(column * CHAR_WIDTH, line * CHAR_HEIGHT) && column >= 1) {
+			while (is_space_empty(column * CHAR_WIDTH, line * CHAR_HEIGHT) && column >= 1) {
 				column--;
 				c++;
 			}
@@ -138,7 +138,7 @@ void printChar(char c, int x, int y, Color color) {
 		char mask = 0b1000000;
 		for (int j = 0; j < CHAR_WIDTH; j++) {
 			if (*charMap & mask)
-				putPixel(color.r, color.g, color.b, x+j, y+i);
+				put_pixel(color.r, color.g, color.b, x+j, y+i);
 			mask >>= 1;
 		}
 		charMap++;
@@ -149,7 +149,7 @@ void printChar(char c, int x, int y, Color color) {
 	int line = 0;
 	int i = 0, j = 0;
 	while (string[i] != 0) {
-		printChar(string[i], x + j * CHAR_WIDTH, y + line * CHAR_HEIGHT);
+		print_char(string[i], x + j * CHAR_WIDTH, y + line * CHAR_HEIGHT);
 		i++; j++;
 		if (x + j * CHAR_WIDTH > VBE_mode_info->width - 9) {
 			line++;
@@ -166,14 +166,14 @@ unsigned int strlen(char * str) {
     return i;
 }
 
-void printStringPlace(char * string, int x, int y, Color color) {
+void print_string_place(char * string, int x, int y, Color color) {
 	int i = 0;
 	int oldColumn = column;
 	int oldLine = line;
 	column = x / CHAR_WIDTH;
 	line = y / CHAR_HEIGHT;
 	while (string[i] != 0) {
-		printChar(string[i], x + i * CHAR_WIDTH, y, color);
+		print_char(string[i], x + i * CHAR_WIDTH, y, color);
 		i++;
 	}
 	column = oldColumn;
@@ -181,54 +181,54 @@ void printStringPlace(char * string, int x, int y, Color color) {
 }
 
 
-void printString(char * string) {
-	printStringN(string, strlen(string));
+void print_string(char * string) {
+	print_stringN(string, strlen(string));
 }
 
-void printStringN(char * string, uint64_t length) {
-	printStringNColor(string, length, WHITE);
+void print_stringN(char * string, uint64_t length) {
+	print_string_N_color(string, length, WHITE);
 }
 
-void printStringColor(char * string, Color color) {
-	printStringNColor(string, strlen(string), color);
+void print_string_color(char * string, Color color) {
+	print_string_N_color(string, strlen(string), color);
 }
 
-void printStringNColor(char * string, uint64_t length, Color color) {
+void print_string_N_color(char * string, uint64_t length, Color color) {
 	int i = 0;
-	eraseCursor();
+	erase_cursor();
 	while (string[i] != 0 && length > 0) {
 		if (string[i] == '\n') {
 			line++;
 			column = 0;
 		} else {
 			column++;
-			printChar(string[i], column * CHAR_WIDTH, line * CHAR_HEIGHT, color);
+			print_char(string[i], column * CHAR_WIDTH, line * CHAR_HEIGHT, color);
 			if (column >= MAX_COLUMNS - 1) {
 				line++;
 				column = 0;
 			}
 		}
 		if (line >= MAX_LINES) {
-			moveOneLineUp();
+			move_one_line_up();
 		}
 		i++;
 		length--;
 	}
-	moveCursor();
+	move_cursor();
 }
 
 
-void printLn(char * string) {
-	printString(string);
+void print_ln(char * string) {
+	print_string(string);
 	line++;
 	column = 0;
 	if (line >= MAX_LINES) {
-		moveOneLineUp();
+		move_one_line_up();
 	}
-	moveCursor();
+	move_cursor();
 }
 
-void moveOneLineUp() {
+void move_one_line_up() {
 	char * dst = (char *) (uint64_t)(VBE_mode_info->framebuffer);
 	char * src = dst + VBE_mode_info->pitch * CHAR_HEIGHT;
 	memcpy(dst, src, VBE_mode_info->pitch * (VBE_mode_info->height - CHAR_HEIGHT));
@@ -236,52 +236,52 @@ void moveOneLineUp() {
 	line--;
 }
 
-void moveCursor() {
+void move_cursor() {
 	if (showCursor) {
 		for (int i = line * CHAR_HEIGHT; i < (line + 1) * CHAR_HEIGHT; i++) {
 			for (int j = (column + 1) * CHAR_WIDTH; j < (column + 2) * CHAR_WIDTH; j++) {
-				putPixel(0xff, 0xff, 0xff, j, i);
+				put_pixel(0xff, 0xff, 0xff, j, i);
 			}
 		}
 	}
 }
 
 
-void eraseCursor() {
+void erase_cursor() {
 	if (showCursor) {
 		for (int i = line * CHAR_HEIGHT; i < (line + 1) * CHAR_HEIGHT; i++) {
 			for (int j = (column + 1) * CHAR_WIDTH; j < (column + 2) * CHAR_WIDTH; j++) {
-				putPixel(0, 0, 0, j, i);
+				put_pixel(0, 0, 0, j, i);
 			}
 		}
 	}
 }
 
-void clearScreen() {
+void clear_screen() {
 	memset((void *) (uint64_t)(VBE_mode_info->framebuffer), 0, VBE_mode_info->pitch * VBE_mode_info->height);
 	line = 1;
 	column = 0;
-	moveCursor();
+	move_cursor();
 }
 
-uint16_t getHeight() {
+uint16_t get_height() {
 	return VBE_mode_info->height;
 }
 
-uint16_t getWidth() {
+uint16_t get_width() {
 	return VBE_mode_info->width;
 }
 
-void toggleCursor() {
+void toggle_cursor() {
 	if (showCursor)
-		eraseCursor();
+		erase_cursor();
 	showCursor = !showCursor;
 }
 
-void drawImage(const unsigned long int * image, int width, int height) {
+void draw_image(const unsigned long int * image, int width, int height) {
 	for (int i = 0, o = 100; i < height; i++, o += 5) {
 		for (int j = 0, k = 230; j < width; j++, k += 5) {
-			drawRect(k, o, 5, 5, image[i * width + j]);
+			draw_rect(k, o, 5, 5, image[i * width + j]);
 		}
 	}
 }
@@ -291,13 +291,13 @@ void printInt(int value) {
     int i = 0;
 
     if (value == 0) {
-        printChar('0', column * CHAR_WIDTH, line * CHAR_HEIGHT, WHITE);
+        print_char('0', column * CHAR_WIDTH, line * CHAR_HEIGHT, WHITE);
         column++;
         return;
     }
 
     if (value < 0) {
-        printChar('-', column * CHAR_WIDTH, line * CHAR_HEIGHT, WHITE);
+        print_char('-', column * CHAR_WIDTH, line * CHAR_HEIGHT, WHITE);
         column++;
         value = -value;
     }
@@ -308,7 +308,7 @@ void printInt(int value) {
     }
 
     while (i > 0) {
-        printChar(buffer[--i], column * CHAR_WIDTH, line * CHAR_HEIGHT, WHITE);
+        print_char(buffer[--i], column * CHAR_WIDTH, line * CHAR_HEIGHT, WHITE);
         column++;
     }
 }
@@ -317,5 +317,5 @@ void printIntLn(int value) {
     printInt(value);
     line++;
     column = 0;
-    moveCursor();
+    move_cursor();
 }

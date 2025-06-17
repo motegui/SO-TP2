@@ -91,6 +91,6 @@ void get_pid();
 
 void list_processes(char *buffer, uint64_t length);
 
-int waitpid(int pid);
+int wait_pid(int pid);
 
 #endif 

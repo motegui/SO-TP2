@@ -11,7 +11,7 @@ static void zero_division();
 
 static void invalid_opcode();
 
-void printRegisters();
+void print_registers();
 
 void exceptionDispatcher(int exception) {
 	if (exception == ZERO_EXCEPTION_ID)
@@ -22,16 +22,16 @@ void exceptionDispatcher(int exception) {
 
 static void zero_division() {
 	// Handler para manejar excepcion
-	printStringColor("\n\nCannot divide by zero.\n\n", RED);
-	printRegisters();
+	print_string_color("\n\nCannot divide by zero.\n\n", RED);
+	print_registers();
 }
 
 static void invalid_opcode() {
-    printStringColor("\n\nInvalid opcode.\n\n", RED);
-    printRegisters();
+    print_string_color("\n\nInvalid opcode.\n\n", RED);
+    print_registers();
 }
 
-void intToHex(uint64_t num, char* hex) {
+void int_to_hex(uint64_t num, char* hex) {
     int i = 0;
     for (i = 15; i >= 0; i--) {
         int aux = num & 0xF;
@@ -45,16 +45,16 @@ void intToHex(uint64_t num, char* hex) {
     hex[16] = 0;
 }
 
-void printRegisters() {
+void print_registers() {
     char * regsnames[] = {"RIP ", "RAX ", "RBX ", "RCX ", "RDX ", "RSI ", "RDI ", "RBP ", "RSP ", "R8  ", "R9  ", "R10 ", "R11 ", "R12 ",
         "R13 ", "R14 ", "R15 ", "RFLAGS "};
-	printString("\n");
+	print_string("\n");
     for (int i = 0; i < REGS_AMOUNT; i++) {
         char hex[17];
-        intToHex(excepRegs[i], hex);
-        printStringColor(regsnames[i], RED);
-        printStringColor(hex, RED);
-        printString("\n");
+        int_to_hex(excepRegs[i], hex);
+        print_string_color(regsnames[i], RED);
+        print_string_color(hex, RED);
+        print_string("\n");
     }
-	printString("\n");
+	print_string("\n");
 }

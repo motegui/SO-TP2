@@ -22,10 +22,10 @@ typedef struct {
 
 typedef Semaphore* sem_t;
 
-sem_t semCreate(int initValue);
-int semClose(sem_t sem);
-int semWait(sem_t sem);
-int semPost(sem_t sem);
+sem_t sem_create(int initValue);
+int sem_close(sem_t sem);
+int sem_wait(sem_t sem);
+int sem_post(sem_t sem);
 
 int enter_region(uint8_t *lock);
 void leave_region(uint8_t *lock);

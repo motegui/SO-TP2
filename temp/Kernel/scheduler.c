@@ -16,22 +16,16 @@ uint64_t schedule(uint64_t current_rsp) {
 
     PCB *next = pick_next_process();
     if (!next){
-       // printStringNColor("[SCHED] if", 24, (Color){255, 255, 0});
         next = get_idle_pcb();
     }
     set_current_process(next);
     next->state = RUNNING;
-
-    //printStringNColor("[SCHED] Eligiendo proceso: ", 24, (Color){255, 255, 0});
-  // printString(next->name);
-    //printStringNColor("\n", 24, (Color){255, 255, 0} );
 
     return next->stack_pointer;
 }
 
 
 PCB *pick_next_process() {
-    //printStringNColor("[KERNEL] pick np\n", 24, (Color){255, 150, 0});
     PCBNode *curr = get_active_process_list();
     if (!curr) return NULL;
 
@@ -48,9 +42,6 @@ PCB *pick_next_process() {
 
     } while (curr != start);
 
-   // printString(best->name);
-
-
     return best;
 }
 
@@ -60,8 +51,6 @@ void save_context(PCB *pcb, uint64_t rsp) {
 
 
 void load_context(PCB *pcb) {
-    printStringNColor("[KERNEL] load\n", 24, (Color){255, 150, 0});
-
     __asm__ volatile (
         "mov %[stack], %%rsp\n"
         "mov (%%rsp), %%rdi\n"       // RDI ← entry_point
@@ -76,8 +65,6 @@ void load_context(PCB *pcb) {
 
 
 void start_scheduler() {
-    printStringNColor("[KERNEL] shceduler\n", 24, (Color){255, 150, 0});
-
     PCB *next = pick_next_process();
     if (!next)
         next = get_idle_pcb();

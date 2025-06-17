@@ -4,44 +4,44 @@
 #include <colors.h>
 #include <stdint.h>
 
-void putPixel(char r, char g, char b, int x, int y);
+void put_pixel(char r, char g, char b, int x, int y);
 
-void drawWhiteLine();
+void draw_white_line();
 
-void drawRect(int x, int y, int width, int height, int color);
+void draw_rect(int x, int y, int width, int height, int color);
 
-char getPixel(int x, int y);
+char get_pixel(int x, int y);
 
-char isSpaceEmpty(int x, int y);
+char is_space_empty(int x, int y);
 
-void printChar(char c, int x, int y, Color color);
+void print_char(char c, int x, int y, Color color);
 
-void printStringPlace(char * string, int x, int y, Color color);
+void print_string_place(char * string, int x, int y, Color color);
 
-void printString(char * string);
+void print_string(char * string);
 
-void printStringN(char * string, uint64_t length);
+void print_stringN(char * string, uint64_t length);
 
-void printLn(char * string);
+void print_ln(char * string);
 
-void moveOneLineUp();
+void move_one_line_up();
 
-void printStringColor(char * string, Color color);
+void print_string_color(char * string, Color color);
 
-void printStringNColor(char * buffer, uint64_t length, Color color);
+void print_string_N_color(char * buffer, uint64_t length, Color color);
 
-void moveCursor();
+void move_cursor();
 
-void eraseCursor();
+void erase_cursor();
 
-void clearScreen();
+void clear_screen();
 
-uint16_t getHeight();
+uint16_t get_height();
 
-uint16_t getWidth();
+uint16_t get_width();
 
-void toggleCursor();
+void toggle_cursor();
 
-void drawImage(const unsigned long int * image, int width, int height);
+void draw_image(const unsigned long int * image, int width, int height);
 
 #endif

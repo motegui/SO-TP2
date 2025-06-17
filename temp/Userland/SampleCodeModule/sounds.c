@@ -31,7 +31,7 @@ void playBSong() {
     playNote(DO2, 6, 2);
     playNote(LA, 8, 20);
 
-    if (getChar() != 0)
+    if (get_char() != 0)
         return;
 
     // 2da parte
@@ -56,7 +56,7 @@ void playBSong() {
     playNote(LA, 1, 2);
     playNote(RE2, 20, 12);
     
-    if (getChar() != 0)
+    if (get_char() != 0)
         return;
 
     //parte tres
@@ -81,7 +81,7 @@ void playBSong() {
     playNote(RE2, 6, 2);
     playNote(DO2, 20, 12);
 
-    if (getChar() != 0)
+    if (get_char() != 0)
         return;
 
     //PARTE 4

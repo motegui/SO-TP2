@@ -19,7 +19,7 @@ void printColor(char* string, uint64_t color) {
     sys_write_color(1, string, len, color);
 }
 
-void printChar(char c) {
+void print_char(char c) {
     char str[] = {c};
     sys_write(1, str, 1);
 }
@@ -29,12 +29,12 @@ void printColorChar(char c, uint64_t color) {
     sys_write_color(1, str, 1, color);
 }
 
-char getChar() {
+char get_char() {
     char c[] = {0};
     sys_read(0, c, 1);
     return c[0];
 }
-char getCharNoBlock() {
+char get_char_no_block() {
 	char c[] = {0};
 	sys_read_no_block(0, c, 1);
 	return c[0];
@@ -52,7 +52,7 @@ void printRegs() {
     sys_get_regs(regs);
     for (int i = 0; i < 17; i++) {
         char hex[17];
-        intToHex(regs[i], hex);
+        int_to_hex(regs[i], hex);
         printf("%s 0x%s\n", regsnames[i], hex);
     }
 }
@@ -75,7 +75,7 @@ void printfColor(char* format, uint64_t color, ...) {
                 case 'x': {
                     int num = va_arg(args, int);
                     char str[9];
-                    intToHex(num, str);
+                    int_to_hex(num, str);
                     printColor(str, color);
                     break;
                 }
@@ -119,7 +119,7 @@ void printf(char* format, ...) {
                 case 'x': {
                     int num = va_arg(args, int);
                     char str[9];
-                    intToHex(num, str);
+                    int_to_hex(num, str);
                     printColor(str, WHITE);
                     break;
                 }

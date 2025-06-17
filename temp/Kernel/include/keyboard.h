@@ -3,9 +3,9 @@
 
 void keyboard_handler();
 
-char getChar();
+char get_char();
 
-char getCharNoBlock();
+char get_char_no_block();
 
 extern unsigned char getKey();
 

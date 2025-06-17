@@ -49,8 +49,8 @@ void playSimpsons() {
     playNote(FASharp, 2, 4);
     playNote(LA, 2, 3);
 
-    if (getChar() != 0) {
-        getChar(); // Consume release
+    if (get_char() != 0) {
+        get_char(); // Consume release
         return;
     }
 
@@ -59,8 +59,8 @@ void playSimpsons() {
     playNote(DO, 2, 2);
     playNote(LA, 2, 3);
 
-    if (getChar() != 0) {
-        getChar();
+    if (get_char() != 0) {
+        get_char();
         return;
     }
 
@@ -69,8 +69,8 @@ void playSimpsons() {
     playNote(FASharp, 1, 2);
     playNote(SOL, 2, 5);
 
-    if (getChar() != 0) {
-        getChar();
+    if (get_char() != 0) {
+        get_char();
         return;
     }
 
@@ -79,8 +79,8 @@ void playSimpsons() {
     playNote(FASharp, 1, 2);
     playNote(SOL, 1, 3);
 
-    if (getChar() != 0) {
-        getChar();
+    if (get_char() != 0) {
+        get_char();
         return;
     }
 

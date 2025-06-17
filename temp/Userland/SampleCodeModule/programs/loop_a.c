@@ -3,17 +3,14 @@
 
 int loop_a_main(int argc, char **argv) {
     while (1) {
-        // Chequea si hay una tecla presionada (no bloqueante)
-        unsigned char c = getCharNoBlock();
-        if (c == 0x01) {  // ESC
+        unsigned char c = get_char_no_block();
+        if (c == 0x01) {
             sys_write(1, "Saliendo loop_a\n", 16);
-            sys_exit_process();  // O la syscall que uses para finalizar el proceso
+            sys_exit_process();
         }
 
-        // Espera activa
         for (volatile int i = 0; i < 100000000; i++);
 
-        // Print opcional
         sys_write(1, "A", 1);
     }
     return 0;

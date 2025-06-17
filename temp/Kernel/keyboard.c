@@ -6,12 +6,12 @@
 #define MAX_KEY_PRESSED 127
 
 static char buffer[BUFFER_SIZE] = {0};
-static int elemCount = 0;
-static int readIndex = 0;
-static int writeIndex = 0;
+static int elem_count = 0;
+static int read_index = 0;
+static int write_index = 0;
 
-static char shiftPressed = 0;
-static char capsLocked = 0;
+static char shift_pressed = 0;
+static char caps_locked = 0;
 
 static const char charHexMap[256] = {       
         0,  1/*esc*/,  '1',  '2',  '3',  '4',  '5',  '6',   '7',  '8',  '9',   '0',   '\'',  '<', '\b',
@@ -32,65 +32,63 @@ static const char charCapsHexMap[256] = {
     0,      0,      18/*left*/,    0,     19/*right*/,     0,      0,      20/*down*/,      0,
 };
 
-char isLetter(unsigned char key) {
+char is_letter(unsigned char key) {
     char c = charHexMap[key];
     return (c >= 'a' && c <= 'z');
 }
 
 void keyboard_handler() {
     unsigned char key = getKey();
-    if (key < 83 || key == 0xAA/* Release SHIFT */ || key == 0x3A /* CAPS Lock */) { // 83 elems in the charHexMap
-        if (elemCount >= BUFFER_SIZE) return;  // buffer is full
+    if (key < 83 || key == 0xAA || key == 0x3A) { 
+        if (elem_count >= BUFFER_SIZE) return;  // buffer is full
         
         // make the array circular
-        if (writeIndex >= BUFFER_SIZE)
-            writeIndex = 0;
+        if (write_index >= BUFFER_SIZE)
+            write_index = 0;
 
-        if (charHexMap[key] == 5 && !shiftPressed) { // Shift key
-            shiftPressed = 1;
+        if (charHexMap[key] == 5 && !shift_pressed) { 
+            shift_pressed = 1;
             return;
         }
-        if (key == 0xAA) { // Shift released
-            shiftPressed = 0;
+        if (key == 0xAA) { 
+            shift_pressed = 0;
             return;
         }
-        if (key == 0x3A) { // Caps Lock
-            capsLocked = !capsLocked;
+        if (key == 0x3A) { 
+            caps_locked = !caps_locked;
             return;
         }
 
-        buffer[writeIndex] = !isLetter(key) ? (shiftPressed ? charCapsHexMap[key] : charHexMap[key]): ((shiftPressed && !capsLocked) || (!shiftPressed && capsLocked)) ? charCapsHexMap[key] : charHexMap[key];
+        buffer[write_index] = !is_letter(key) ? (shift_pressed ? charCapsHexMap[key] : charHexMap[key]): ((shift_pressed && !caps_locked) || (!shift_pressed && caps_locked)) ? charCapsHexMap[key] : charHexMap[key];
 
         // update iterators
-        elemCount++;
-        writeIndex++;
+        elem_count++;
+        write_index++;
     } else {
-        buffer[writeIndex] = key;
-        elemCount++;
-        writeIndex++;
+        buffer[write_index] = key;
+        elem_count++;
+        write_index++;
     }
 }
 
-char getChar() {
-    if (elemCount == 0) { 
+char get_char() {
+    if (elem_count == 0) { 
         return 0; // buffer is empty
     }
 
-    char toReturn = buffer[readIndex];
+    char toReturn = buffer[read_index];
     
-    // update iterators
-    elemCount--;
-    readIndex++;
+    elem_count--;
+    read_index++;
 
-    // make the array circular
-    if (readIndex == BUFFER_SIZE) readIndex = 0;
+    if (read_index == BUFFER_SIZE) read_index = 0;
     
     return toReturn;
 }
 
-char getCharNoBlock() {
-	if (elemCount == 0)
+char get_char_no_block() {
+	if (elem_count == 0)
 		return 0;
 
-	return getChar();
+	return get_char();
 }

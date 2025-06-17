@@ -69,17 +69,12 @@ int main()
 	);
 
 	char *shellArgs[] = { "sh", NULL };
-
-   	create_process("sh", 0, 1, true, sampleCodeModuleAddress, shellArgs);
-	//start_scheduler();
-
-
+	
+	create_process("sh", 0, 1, true, sampleCodeModuleAddress, shellArgs);
 
 	while (1) {
 		_sti();
 		_hlt();
 	}
-	
-	// beep();
 	return 0;
 }
