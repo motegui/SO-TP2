@@ -9,9 +9,13 @@ static int quantum_remaining = DEFAULT_QUANTUM;
 
 uint64_t schedule(uint64_t current_rsp) {
     PCB *current = get_current_process();
-    if (current && current->state == RUNNING) {
+    if (current) {
         save_context(current, current_rsp);
-        current->state = READY;
+        if (is_blocked_by_semaphore(current->pid)) {
+            current->state = BLOCKED;
+        } else if (current->state == RUNNING) {
+            current->state = READY;
+        }
     }
 
     PCB *next = pick_next_process();
@@ -48,30 +52,3 @@ PCB *pick_next_process() {
 void save_context(PCB *pcb, uint64_t rsp) {
     pcb->stack_pointer = (void *)rsp;
 }
-
-
-void load_context(PCB *pcb) {
-    __asm__ volatile (
-        "mov %[stack], %%rsp\n"
-        "mov (%%rsp), %%rdi\n"       // RDI ← entry_point
-        "mov 8(%%rsp), %%rsi\n"      // RSI ← args
-        "jmp *16(%%rsp)\n"           // saltar a wrapper
-        :
-        : [stack] "r"(pcb->stack_pointer)
-        : "rdi", "rsi"
-    );
-
-}
-
-
-void start_scheduler() {
-    PCB *next = pick_next_process();
-    if (!next)
-        next = get_idle_pcb();
-
-
-    set_current_process(next);
-    set_process_state(next, RUNNING);
-    load_context(next);
-}
-

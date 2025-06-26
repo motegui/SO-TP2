@@ -199,7 +199,7 @@ static void sys_get_screensize(uint64_t width, uint64_t height) {
 
 static int64_t sys_create_process(uint64_t name, uint64_t priority, uint64_t foreground, uint64_t entry_point, uint64_t args) {
     PCB *pcb = create_process(name, get_current_process()->pid, priority, foreground, (void *) entry_point, args);
-    if (!pcb) return -1;
+    if (!pcb) return -1; //aca va lo del profe
     return pcb->pid;
 }
 

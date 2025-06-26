@@ -1,6 +1,7 @@
 #include "sync.h"
 #include <string.h>
 #include <videodriver.h>
+#include "stdbool.h"
 
 #define MAX_SEMAPHORES 32
 
@@ -48,7 +49,7 @@ int sem_wait(sem_t sem) {
     }
     // Bloqueamos el proceso actual
     sem->blocked_pid = get_current_process()->pid;
-    get_current_process()->state = BLOCKED;
+    //get_current_process()->state = BLOCKED;
     leave_region(&sem->lock);
     __asm__ volatile("int $0x20");
     return 0;
@@ -72,4 +73,13 @@ int sem_post(sem_t sem) {
     }
 
     return 0;
+}
+
+bool is_blocked_by_semaphore(int pid) {
+    for (int i = 0; i < MAX_SEMAPHORES; i++) {
+        if (semaphores[i].in_use && semaphores[i].blocked_pid == pid) {
+            return true;
+        }
+    }
+    return false;
 }

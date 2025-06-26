@@ -26,6 +26,7 @@ sem_t sem_create(int initValue);
 int sem_close(sem_t sem);
 int sem_wait(sem_t sem);
 int sem_post(sem_t sem);
+bool is_blocked_by_semaphore(int pid);
 
 int enter_region(uint8_t *lock);
 void leave_region(uint8_t *lock);
