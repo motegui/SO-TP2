@@ -100,11 +100,14 @@ void shell() {
 		unsigned char c = get_char();
 		if (c == '\n') {
 			buffer[count] = 0;
-			analizeBuffer(buffer, count, 0, defaultFds);
+			if (count > 0) {
+				analizeBuffer(buffer, count, 0, defaultFds);
+			}
 			printColor("\nHomerOS: $> ", GREEN);
 			strcpy(oldBuffer, buffer);
 			flag = 1;
 			count = 0;
+			buffer[0] = 0; // limpiar buffer explícitamente
 		} else if (c == '\b') {
 			if (count > 0) {
 				print_char(c);
@@ -166,7 +169,7 @@ int commandMatch(char * str1, char * command, int count) {
 
 int has_pipe(char *buffer) {
     while (*buffer != 0) {
-        if (*buffer == '/')
+        if (*buffer == '|')
             return 1;
         buffer++;
     }
@@ -188,7 +191,7 @@ void analyze_piped_command(char *buffer, int count) {
     char *commands[2];
     int i = 0;
     while (buffer[i] != 0) {
-        if (buffer[i] == '/') {
+        if (buffer[i] == '|') {
             buffer[i] = 0;
             commands[0] = buffer;
             commands[1] = &buffer[i + 1];
@@ -205,10 +208,10 @@ void analyze_piped_command(char *buffer, int count) {
     int pid1 = analizeBuffer(commands[0], strlen(commands[0]), 1, fds1);
     int pid2 = analizeBuffer(commands[1], strlen(commands[1]), 1, fds2);
 
-	if (pid1 > 0 && pid2 > 0) {
-		sys_wait_pid(pid1);
-		sys_wait_pid(pid2);
-	}
+    if (pid1 > 0 && pid2 > 0) {
+        sys_wait_pid(pid1);
+        sys_wait_pid(pid2);
+    }
 
     sys_close_pipe(pipe_fd);
 }
