@@ -40,6 +40,8 @@ int strncmp(char * str1, char * str2, int length);
 
 void fillRegisters();
 
+void *memset(void *ptr, int value, unsigned long num);
+
 char * get_time();
 
 char * get_date();
