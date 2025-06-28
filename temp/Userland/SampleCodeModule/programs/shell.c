@@ -9,8 +9,11 @@
 #include <tests.h>
 #include <stddef.h>
 #include <programs.h>
+#include <date_time.h>
+#include <process_userland.h>
+
 #define COMMANDS_QUANTITY 22
-char * testmmArgs[3];
+char * test_mm_args[3];
 
 extern int loop_a_main(int argc, char **argv);
 
@@ -78,7 +81,10 @@ static char *commands[] = {
     "\ttest_prio: test process priorities.\n",
     "\ttest_processes: test process creation, kill, block, unblock.\n",
 };
-
+char * loop_args[2] = {"loop", NULL};
+char * test_mm_args[3];
+char * test_pro_args[3];
+char * test_sync_args[4];
 void shell() {
 	printColor("Welcome to HomerOS. Type \"help\" for command list\n", ORANGE);
 	printfColor("Shell PID: %d\n", GREEN, sys_get_pid());
@@ -166,6 +172,17 @@ int has_pipe(char *buffer) {
     }
     return 0;
 }
+void parse_command(char **argv, char *buffer, int max_args) {
+	int i = 0, j = 0;
+	while (buffer[i] != 0 && j < max_args) {
+		while (buffer[i] == ' ') i++;
+		if (buffer[i] == 0) break;
+		argv[j++] = &buffer[i];
+		while (buffer[i] != 0 && buffer[i] != ' ') i++;
+		if (buffer[i] != 0) buffer[i++] = 0;
+	}
+	argv[j] = NULL;
+}
 
 void analyze_piped_command(char *buffer, int count) {
     char *commands[2];
@@ -196,6 +213,13 @@ void analyze_piped_command(char *buffer, int count) {
     sys_close_pipe(pipe_fd);
 }
 
+void print_help(){
+	printColor("\n\nLos comandos disponibles son:\n\n", GREEN);
+	for(int i=0; i<COMMANDS_QUANTITY; i++){
+		printColor(commands[i], YELLOW);
+	}
+}
+
 
 int isBackground(char * buff) {
 	int j = 0;
@@ -210,10 +234,9 @@ int isBackground(char * buff) {
 }
 
 
-int analizeBuffer(char * buffer, int count, int piped, int *fds) {
-
+int analizeBuffer(char * buffer, int count, int piped, int * fds) {
 	if (count <= 0)
-		return;
+		return -1;
 
 	if (has_pipe(buffer)) {
 		analyze_piped_command(buffer, count);
@@ -222,114 +245,184 @@ int analizeBuffer(char * buffer, int count, int piped, int *fds) {
 
 	int background = isBackground(buffer);
 
+	// HELP
 	if (commandMatch(buffer, "help", count) || commandMatch(buffer, "HELP", count)) {
-		printColor("\n\nComandos disponibles:\n\n", YELLOW);
-		for (int i = 0; i < COMMANDS_QUANTITY; i++) {
-			printColor(commands[i], CYAN);
-		}
-	} else if (commandMatch(buffer, "time", count)) {
-		printfColor("\n\nTime of OS: ", YELLOW);
-		printfColor("%s\n", CYAN, getTime());
-	} else if (commandMatch(buffer, "date", count)) {
-		printfColor("\n\nDate of OS: ", YELLOW);
-		printfColor("%s\n", CYAN, getDate());
-	} else if (commandMatch(buffer, "registers", count)) {
-		printRegs();
-	} else if (commandMatch(buffer, "fillregs", count)) {
-		fillRegisters();
-	} else if (commandMatch(buffer, "clear", count)) {
-		sys_clear_screen();
-	} else if (commandMatch(buffer, "pong", count)) {
-		char * args[] = { "pong", NULL };
-		int pid = sys_create_process("pong", 1, 1, &pong, args);
-		sys_wait_pid(pid);
+		char * args[] = {"help", NULL};
+		int pid = sys_create_process("help", 1, !background, &print_help, args);
+		return wait(pid, piped, background);
 	}
-	 else if (commandMatch(buffer, "div0", count)) {
+
+	// TIME
+	else if (commandMatch(buffer, "time", count)) {
+		char * args[] = {"time", NULL};
+		int pid = sys_create_process("time", 1, !background, &time_print, args);
+		return wait(pid, piped, background);
+	}
+
+	// DATE
+	else if (commandMatch(buffer, "date", count)) {
+		char * args[] = {"date", NULL};
+		int pid = sys_create_process("date", 1, !background, &date_print, args);
+		return wait(pid, piped, background);
+	}
+
+	// REGISTERS
+	else if (commandMatch(buffer, "registers", count)) {
+		char * args[] = {"registers", NULL};
+		int pid = sys_create_process("registers", 1, !background, &printRegs, args);
+		return wait(pid, piped, background);
+	}
+
+	// FILLREGS
+	else if (commandMatch(buffer, "fillregs", count)) {
+		char * args[] = {"fillregs", NULL};
+		int pid = sys_create_process("fillregs", 1, !background, &fillRegisters, args);
+		return wait(pid, piped, background);
+	}
+
+	// CLEAR
+	else if (commandMatch(buffer, "clear", count)) {
+		sys_clear_screen();
+		return 0;
+	}
+
+	// DIV0
+	else if (commandMatch(buffer, "div0", count)) {
 		divideByZero();
-	} else if (commandMatch(buffer, "invalidop", count)) {
+		return 0;
+	}
+
+	// INVALIDOP
+	else if (commandMatch(buffer, "invalidop", count)) {
 		invalidOpcode();
-	} else if (commandMatch(buffer, "boca", count)) {
-		sys_clear_screen();
-		sys_draw_image(diego, 100, 100);
-		playBSong();
-		sys_clear_screen();
-	} else if (commandMatch(buffer, "loop", count)) {
-        char * args[2] = {"loop", NULL};
-        int pid = sys_create_process("loop", 1, 1, &loop_a_main, args);
-		sys_wait_pid(pid);
-        return;
-    } else if (commandMatch(buffer, "ps", count)) {
-        char procBuffer[1024];
-        sys_list_processes(procBuffer, sizeof(procBuffer));
-        printColor(procBuffer, CYAN); 
-    } else if (commandMatch(buffer, "cat", count)) {
-		char * args[2] = {"cat", NULL};
-		int pid = sys_create_process("cat", !background, 1, &cat, args);
+		return 0;
+	}
+
+	// MEM
+	else if (commandMatch(buffer, "mem", count)) {
+		char * args[] = {"mem", NULL};
+		int pid = sys_create_process("mem", 1, !background, &memInfo, args);
 		return wait(pid, piped, background);
 	}
-	
-	else if (commandMatch(buffer, "test_mm", count)) {
-		char *args[] = { "2048", NULL };
-		int pid = sys_create_process("testmm", 1, 1, &test_mm, args);
-		if (!background)
-			sys_wait_pid(pid);
-		return pid;
-	}
-	else if (commandMatch(buffer, "test_sync", count)) {
-        char *args[] = { "1000", "1", NULL }; // ejemplo de argumentos: n=1000, use_sem=1
-        int pid = sys_create_process("testsync", 1, 1, &test_sync, args);
-        if (!background)
-            sys_wait_pid(pid);
-        return pid;
-    }
-    else if (commandMatch(buffer, "test_prio", count)) {
-        int pid = sys_create_process("testprio", 1, 1, &test_prio, NULL);
-        if (!background)
-            sys_wait_pid(pid);
-        return pid;
-    }
-    else if (commandMatch(buffer, "test_processes", count)) {
-        char *args[] = { "10", NULL }; // ejemplo: máximo 10 procesos
-        int pid = sys_create_process("testprocesses", 1, 1, &test_processes, args);
-        if (!background)
-            sys_wait_pid(pid);
-        return pid;
-    }
-	else if (commandMatch(buffer, "phylo", count)) {
-        char *args[] = { "phylo", NULL };
-        int pid = sys_create_process("phylo", 1, 1, &phylo, args);
-        if (!background)
-            sys_wait_pid(pid);
-        return pid;
-    }
-	 else if (commandMatch(buffer, "cat", count)) {
-		char *args[64];
-		int pid = sys_create_process("cat", !background, fds, &cat, args);
+
+	// PS
+	else if (commandMatch(buffer, "ps", count)) {
+		char * args[] = {"ps", NULL};
+		int pid = sys_create_process("ps", 1, !background, &processesInfo, args);
 		return wait(pid, piped, background);
 	}
-	 else if (commandMatch(buffer, "wc", count)) {
-		char * args[2] = {"wc", NULL};
-		int pid = sys_create_process("wc", !background, fds, &wc, args);
+
+	// KILL
+	else if (commandMatch(buffer, "kill", count)) {
+		char * args[3];
+		parse_command(args, buffer, 3);
+		int pid = sys_create_process("kill", 1, !background, &killProcess, args);
 		return wait(pid, piped, background);
 	}
+
+	// BLOCK
+	else if (commandMatch(buffer, "block", count)) {
+		char * args[3];
+		parse_command(args, buffer, 3);
+		int pid = sys_create_process("block", 1, !background, &blockProcess, args);
+		return wait(pid, piped, background);
+	}
+
+	// UNBLOCK
+	else if (commandMatch(buffer, "unblock", count)) {
+		char * args[3];
+		parse_command(args, buffer, 3);
+		int pid = sys_create_process("unblock", 1, !background, &unblockProcess, args);
+		return wait(pid, piped, background);
+	}
+
+	// YIELD
+	else if (commandMatch(buffer, "yield", count)) {
+		char * args[] = {"yield", NULL};
+		int pid = sys_create_process("yield", 1, !background, &yield, args);
+		return wait(pid, piped, background);
+	}
+
+	// NICE
+	else if (commandMatch(buffer, "nice", count)) {
+		char * args[4];
+		parse_command(args, buffer, 4);
+		int pid = sys_create_process("nice", 1, !background, &changePriority, args);
+		return wait(pid, piped, background);
+	}
+
+	// LOOP
+	else if (commandMatch(buffer, "loop", count)) {
+		int pid = sys_create_process("loop", 1, !background, &loop_a_main, loop_args);
+		return wait(pid, piped, background);
+	}
+
+	// TESTMM
+	else if (commandMatch(buffer, "testmm", count)) {
+		parse_command(test_mm_args, buffer, 3);
+		int pid = sys_create_process("testmm", 1, !background, &test_mm, test_mm_args);
+		return wait(pid, piped, background);
+	}
+
+	// TESTPRO
+	else if (commandMatch(buffer, "testpro", count)) {
+		parse_command(test_pro_args, buffer, 3);
+		int pid = sys_create_process("testpro", 1, !background, &test_processes, test_pro_args);
+		return wait(pid, piped, background);
+	}
+
+	// TESTPRIO
+	else if (commandMatch(buffer, "testprio", count)) {
+		int pid = sys_create_process("testprio", 1, !background, &test_prio, NULL);
+		return wait(pid, piped, background);
+	}
+
+	// TESTSYNC
+	else if (commandMatch(buffer, "testsync", count)) {
+		parse_command(test_sync_args, buffer, 4);
+		int pid = sys_create_process("testsync", 1, !background, &test_sync, test_sync_args);
+		return wait(pid, piped, background);
+	}
+
+	// PONG
+	else if (commandMatch(buffer, "pong", count)) {
+		char * args[] = {"pong", NULL};
+		int pid = sys_create_process("pong", 1, !background, &pong, args);
+		return wait(pid, piped, background);
+	}
+
+	// CAT
+	else if (commandMatch(buffer, "cat", count)) {
+		char * args[] = {"cat", NULL};
+		int pid = sys_create_process("cat", 1, !background, &cat, args);
+		return wait(pid, piped, background);
+	}
+
+	// WC
+	else if (commandMatch(buffer, "wc", count)) {
+		char * args[] = {"wc", NULL};
+		int pid = sys_create_process("wc", 1, !background, &wc, args);
+		return wait(pid, piped, background);
+	}
+
+	// FILTER
 	else if (commandMatch(buffer, "filter", count)) {
-		char * args[2] = {"filter", NULL};
-		int pid = sys_create_process("filter", !background, fds, &filter, args);
+		char * args[] = {"filter", NULL};
+		int pid = sys_create_process("filter", 1, !background, &filter, args);
 		return wait(pid, piped, background);
 	}
+
+	// PHILOS
+	else if (commandMatch(buffer, "phylos", count)) {
+		char * args[] = {"phylos", NULL};
+		int pid = sys_create_process("phylos", 1, !background, &phylo, args);
+		return wait(pid, piped, background);
+	}
+
+	// Default: command not found
 	else {
-			printfColor("\nCommand not found. Type \"help\" for command list\n", RED);
-    }
+		printColor("\nCommand not found. Type \"help\" for command list\n", RED);
+		return -1;
+	}
 }
 
-void parse_command(char **argv, char *buffer, int max_args) {
-	int i = 0, j = 0;
-	while (buffer[i] != 0 && j < max_args) {
-		while (buffer[i] == ' ') i++;
-		if (buffer[i] == 0) break;
-		argv[j++] = &buffer[i];
-		while (buffer[i] != 0 && buffer[i] != ' ') i++;
-		if (buffer[i] != 0) buffer[i++] = 0;
-	}
-	argv[j] = NULL;
-}

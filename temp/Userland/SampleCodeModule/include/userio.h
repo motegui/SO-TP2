@@ -40,8 +40,8 @@ int strncmp(char * str1, char * str2, int length);
 
 void fillRegisters();
 
-char * getTime();
+char * get_time();
 
-char * getDate();
+char * get_date();
 
 #endif

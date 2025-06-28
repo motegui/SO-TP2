@@ -37,6 +37,18 @@ typedef struct PCBNode {
     struct PCBNode *next;
 } PCBNode;
 
+typedef struct processInfo {
+	char * name;
+	int pid;
+	int parent;
+	uint64_t * rsp;
+	uint64_t * rbp;
+	size_t priority;
+	char foreground;
+	int status;
+	int exitCode;
+} processInfo;
+
 PCB *create_process(const char *name, int parent_pid, int priority, bool foreground, void *entry_point, char **args);
 
 void process_wrapper(int (*entry_point)(int, char **), char **args);

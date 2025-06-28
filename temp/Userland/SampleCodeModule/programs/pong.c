@@ -201,7 +201,7 @@ void win(int color, int player) {
 short tick() {
     static uint32_t lastTick = 0;
     uint32_t currentTicks;
-    sys_get_ticks(&currentTicks);
+    currentTicks = sys_get_ticks();
     if (currentTicks != lastTick) {
         lastTick = currentTicks;
         return 1;

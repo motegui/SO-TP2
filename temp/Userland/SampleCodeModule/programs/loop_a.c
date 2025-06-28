@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <usyscalls.h>
+#include <userio.h>
 
 int loop_a_main(int argc, char **argv) {
     while (1) {

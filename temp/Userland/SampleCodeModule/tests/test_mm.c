@@ -1,13 +1,27 @@
 #include "test_util.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <usyscalls.h> 
 #define MAX_BLOCKS 128
 #define BLOCK_COUNT 32
 #define BLOCK_SIZE  1024
 
+// Simple memset implementation
+void memset(void *ptr, int value, size_t num) {
+    unsigned char *p = (unsigned char *)ptr;
+    for (size_t i = 0; i < num; i++) {
+        p[i] = (unsigned char)value;
+    }
+}
 
+// Simple memcheck implementation
+int memcheck(void *addr, char val, uint32_t size) {
+    unsigned char *p = (unsigned char *)addr;
+    for (uint32_t i = 0; i < size; i++) {
+        if (p[i] != (unsigned char)val) {
+            return 0;
+        }
+    }
+    return 1;
+}
 
 typedef struct MM_rq {
   void *address;

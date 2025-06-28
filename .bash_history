@@ -34,3 +34,14 @@ ls
 cd temp
 make clean && make
 exit
+cd temp
+ls
+cd root
+cd temp
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+exit

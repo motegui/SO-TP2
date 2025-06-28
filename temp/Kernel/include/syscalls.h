@@ -17,9 +17,9 @@ static void sys_write_place(uint64_t fd, uint64_t buffer, uint64_t length, uint6
 
 static void sys_get_registers(uint64_t regsBuff);
 
-static void sys_get_time(uint64_t buffer);
+static int64_t sys_get_time(uint64_t buffer);
 
-static void sys_get_date(uint64_t buffer);
+static int64_t sys_get_date(uint64_t buffer);
 
 static void sys_clear_screen();
 
@@ -40,7 +40,7 @@ static void sys_nice_process(uint64_t pid, uint64_t new_priority);
 static void sys_block_process(uint64_t pid);
 
 static void sys_unblock_process(uint64_t pid);
-
+static int64_t sys_free_processes_info(uint64_t info);
 static void sys_yield();
 
 static void sys_wait_for_children();

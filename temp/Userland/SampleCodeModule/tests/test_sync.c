@@ -5,6 +5,15 @@
 #define SEM_ID "sem"
 #define TOTAL_PAIR_PROCESSES 2
 
+// Simple hash function to convert string to uint64_t
+uint64_t string_hash(const char *str) {
+    uint64_t hash = 5381;
+    int c;
+    while ((c = *str++))
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c
+    return hash;
+}
+
 int64_t global; // shared memory
 
 void slowInc(int64_t *p, int64_t inc) {
@@ -30,21 +39,21 @@ uint64_t my_process_inc(uint64_t argc, char *argv[]) {
         return -1;
 
     if (use_sem)
-        if (!sys_sem_create(SEM_ID, 1)) {
+        if (!sys_sem_create(string_hash(SEM_ID), 1)) {
             sys_write(1, "test_sync: ERROR opening semaphore\n", 35);
             return -1;
         }
 
     for (uint64_t i = 0; i < n; i++) {
         if (use_sem)
-            sys_sem_wait(SEM_ID);
+            sys_sem_wait(string_hash(SEM_ID));
         slowInc(&global, inc);
         if (use_sem)
-            sys_sem_post(SEM_ID);
+            sys_sem_post(string_hash(SEM_ID));
     }
 
     if (use_sem)
-        sys_sem_close(SEM_ID);
+        sys_sem_close(string_hash(SEM_ID));
 
     return 0;
 }

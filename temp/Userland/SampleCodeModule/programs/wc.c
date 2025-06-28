@@ -1,5 +1,6 @@
 #include <usyscalls.h>
 #include <programs.h>
+#include <userio.h>
 
 int wc(char **args) {
     print_char('\n');

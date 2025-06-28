@@ -142,6 +142,14 @@ void remove_active_process(int pid) {
         curr = &((*curr)->next);
     }
 }
+void freeProcessesInfo(processInfo **info) {
+    for (int i = 0; info[i] != NULL; i++) {
+        freeMemory(globalMemoryManager, info[i]->name);
+        freeMemory(globalMemoryManager, info[i]);
+    }
+    freeMemory(globalMemoryManager, info);
+}
+
 
 void print_active_processes() {
     PCBNode *curr = active_processes;

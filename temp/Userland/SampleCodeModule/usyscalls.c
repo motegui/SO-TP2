@@ -1,4 +1,5 @@
 #include <usyscalls.h>
+#include <process_userland.h>
 
 extern uint64_t sys_call(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 
@@ -87,20 +88,20 @@ void sys_list_processes(char *buffer, uint64_t length) {
     sys_call(17, (uint64_t)buffer, length, 0, 0, 0);
 }
 
-void sys_kill_process(int pid) {
-    sys_call(18, (uint64_t)pid, 0, 0, 0, 0);
+uint64_t sys_kill_process(int pid) {
+    return sys_call(18, (uint64_t)pid, 0, 0, 0, 0);
 }
 
 void sys_nice_process(uint64_t pid, uint64_t new_priority) {
     sys_call(19, pid, new_priority, 0, 0, 0);
 }
 
-void sys_block_process(uint64_t pid) {
-    sys_call(20, pid, 0, 0, 0, 0);
+uint64_t sys_block_process(uint64_t pid) {
+    return sys_call(20, pid, 0, 0, 0, 0);
 }
 
-void sys_unblock_process(uint64_t pid) {
-    sys_call(21, pid, 0, 0, 0, 0);
+uint64_t sys_unblock_process(uint64_t pid) {
+    return sys_call(21, pid, 0, 0, 0, 0);
 }
 
 void sys_yield() {
@@ -158,4 +159,23 @@ uint64_t sys_wait_pid(uint64_t pid){
 
 uint64_t sys_close_pipe(int pipe_id) {
     return sys_call(36, pipe_id, 0, 0, 0, 0);
+}
+
+
+
+MemoryDataPtr sys_mem_data() {
+	return (MemoryDataPtr) sys_call(
+	    (uint64_t) 37, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+ProcessInfoPtr * sys_processes_info() {
+	return (ProcessInfoPtr *) sys_call(
+	    (uint64_t) 38, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+int64_t sys_free_processes_info(ProcessInfoPtr * info) {
+	return sys_call((uint64_t) 39, (uint64_t) info, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+int64_t sys_change_priority(int pid, int new_priority) {
+	return sys_call((uint64_t) 40, (uint64_t) pid, (uint64_t) new_priority, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }

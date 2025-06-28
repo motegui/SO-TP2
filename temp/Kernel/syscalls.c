@@ -26,12 +26,10 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
         case 3:
             sys_get_registers(arg0);
             break;
-        case 4:
-            sys_get_time(arg0);
-            break;
-        case 5:
-            sys_get_date(arg0);
-            break;
+       	case 4:
+			return (int64_t) sys_get_time(arg0);
+		case 5:
+			return (int64_t) sys_get_date(arg0);
         case 6:
             sys_clear_screen();
             break;
@@ -111,6 +109,8 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             return (int64_t) sys_wait_pid(arg0);
         case 36:
             return sys_close_pipe((int) arg0);
+        case 37:
+        return (int64_t) sys_free_processes_info(arg0);
 
         }
 
@@ -158,6 +158,11 @@ static void sys_write_place(uint64_t fd, uint64_t buffer, uint64_t length, uint6
     }
 }
 
+static int64_t sys_free_processes_info(uint64_t info) {
+	freeProcessesInfo((processInfo **) info);
+	return 0;
+}
+
 static void sys_write_color(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t color) {
     if (fd == STDOUT || fd == STDERR) {
         Color c;
@@ -174,12 +179,14 @@ static void sys_get_registers(uint64_t regsBuff) {
     }
 }
 
-static void sys_get_time(uint64_t buffer) {
-    timeToStr((char *) buffer);
+static int64_t sys_get_time(uint64_t buffer) {
+	timeToStr((char *) buffer);
+	return 0;
 }
 
-static void sys_get_date(uint64_t buffer) {
-    dateToStr((char *) buffer);
+static int64_t sys_get_date(uint64_t buffer) {
+	dateToStr((char *) buffer);
+	return 0;
 }
 
 static void sys_clear_screen() {
