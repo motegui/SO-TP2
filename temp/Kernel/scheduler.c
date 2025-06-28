@@ -1,11 +1,15 @@
 #include "scheduler.h"
 #include "process_manager.h"
+#include "sync.h"
 #include <videodriver.h>
 
 #define DEFAULT_QUANTUM 5
 
-
 static int quantum_remaining = DEFAULT_QUANTUM;
+
+void save_context(PCB *pcb, uint64_t rsp) {
+    pcb->stack_pointer = (void *)rsp;
+}
 
 uint64_t schedule(uint64_t current_rsp) {
     PCB *current = get_current_process();
@@ -25,9 +29,8 @@ uint64_t schedule(uint64_t current_rsp) {
     set_current_process(next);
     next->state = RUNNING;
 
-    return next->stack_pointer;
+    return (uint64_t)next->stack_pointer;
 }
-
 
 PCB *pick_next_process() {
     PCBNode *curr = get_active_process_list();
@@ -47,8 +50,4 @@ PCB *pick_next_process() {
     } while (curr != start);
 
     return best;
-}
-
-void save_context(PCB *pcb, uint64_t rsp) {
-    pcb->stack_pointer = (void *)rsp;
 }

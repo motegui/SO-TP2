@@ -44,7 +44,7 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
 
     char sem_name[16];
     snprintf(sem_name, sizeof(sem_name), "sem_%d", pcb->pid);
-    pcb->sem_id = sem_create(0);
+    pcb->sem_id = (struct Semaphore *)sem_create(0);
 
     add_active_process(pcb);
 
@@ -298,7 +298,7 @@ void exit_process() {
     }
 
     current->state = ZOMBIE;
-    sem_post(current->sem_id);
+    sem_post((sem_t)current->sem_id);
 
     __asm__ volatile("int $0x20");
 }
@@ -317,7 +317,7 @@ void kill_process(int pid) {
         destroy_process(target);
     } else {
         target->state = ZOMBIE;
-        sem_post(target->sem_id);
+        sem_post((sem_t)target->sem_id);
 
     }
 
@@ -370,7 +370,7 @@ int wait_pid(int pid) {
         return -1;
     }
 
-    sem_wait(target->sem_id);          // Bloquea y espera al hijo
+    sem_wait((sem_t)target->sem_id);          // Bloquea y espera al hijo
     kill_process(target->pid);        // Hace cleanup
     return pid;
 }

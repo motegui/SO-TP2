@@ -3,8 +3,6 @@
 #include <videodriver.h>
 #include "stdbool.h"
 
-#define MAX_SEMAPHORES 32
-
 static Semaphore semaphores[MAX_SEMAPHORES];
 
 static int get_free_slot() {

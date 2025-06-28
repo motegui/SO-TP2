@@ -28,9 +28,11 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_get_registers(arg0);
             break;
        	case 4:
-			return (int64_t) sys_get_time(arg0);
+			sys_get_time(arg0);
+			return;
 		case 5:
-			return (int64_t) sys_get_date(arg0);
+			sys_get_date(arg0);
+			return;
         case 6:
             sys_clear_screen();
             break;
@@ -56,7 +58,8 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_draw_image(arg0, arg1, arg2);
             break;
         case 14:
-            return sys_create_process(arg0, arg1, arg2, arg3,arg4);
+            sys_create_process(arg0, arg1, arg2, arg3,arg4);
+            return;
         case 15:
             sys_exit_process();
             break;
@@ -85,17 +88,20 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_wait_for_children(); //done pero habria que chequearla
             break;
        case 24:
-            return sys_malloc(arg0);
+            sys_malloc(arg0);
+            return;
         case 25:
-            return sys_free((void *) arg0);     // Liberar memoria (arg0 = ptr) //puntero a chequear
-            break;
+            sys_free(arg0);     // Liberar memoria (arg0 = ptr) //puntero a chequear
+            return;
         case 26:
             sys_get_mem_status((size_t *) arg0, (size_t *) arg1);
             break;
         case 27:
-            return sys_sem_create(arg0);   
+            sys_sem_create(arg0);
+            return;
         case 29:
-            return sys_sem_close(arg0);        
+            sys_sem_close(arg0);
+            return;
         case 30:
             sys_sem_wait(arg0);
             return;
@@ -109,13 +115,17 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_read_pipe((int) arg0, (char *) arg1, (int) arg2);
             return;
         case 34:
-            return sys_write_pipe((int) arg0, (char*)arg1, (int)arg2);
+            sys_write_pipe((int) arg0, (char*)arg1, (int)arg2);
+            return;
         case 35:
-            return (int64_t) sys_wait_pid(arg0);
+            sys_wait_pid(arg0);
+            return;
         case 36:
-            return sys_close_pipe((int) arg0);
+            sys_close_pipe((int) arg0);
+            return;
         case 37:
-        return (int64_t) sys_free_processes_info(arg0);
+            sys_free_processes_info(arg0);
+            return;
 
         }
 
@@ -215,7 +225,7 @@ static void sys_get_screensize(uint64_t width, uint64_t height) {
 }
 
 static int64_t sys_create_process(uint64_t name, uint64_t priority, uint64_t foreground, uint64_t entry_point, uint64_t args) {
-    PCB *pcb = create_process(name, get_current_process()->pid, priority, foreground, (void *) entry_point, args);
+    PCB *pcb = create_process((const char *)name, get_current_process()->pid, priority, foreground, (void *) entry_point, (char **)args);
     if (!pcb) return -1; //aca va lo del profe
     return pcb->pid;
 }

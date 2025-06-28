@@ -108,4 +108,6 @@ void list_processes(char *buffer, uint64_t length);
 
 int wait_pid(int pid);
 
+void freeProcessesInfo(processInfo **info);
+
 #endif 
