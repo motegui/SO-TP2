@@ -428,7 +428,7 @@ int analizeBuffer(char * buffer, int count, int piped, int * fds) {
 	// TESTMM
 	else if (commandMatch(buffer, "testmm", count)) {
 		parse_command(test_mm_args, buffer, 3);
-		int pid = sys_create_process("testmm", 1, !background, &test_mm, test_mm_args);
+		int pid = sys_create_process("testmm", 1, !background, &test_mm, test_mm_args + 1);
 		return wait(pid, piped, background);
 	}
 

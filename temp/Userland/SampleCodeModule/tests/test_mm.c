@@ -13,6 +13,8 @@ typedef struct MM_rq {
 
 
 uint64_t test_mm(int argc, char *argv[]) {
+sys_write(1, "test_mm\n", 8);
+
   mm_rq mm_rqs[MAX_BLOCKS];
   uint8_t rq;
   uint32_t total;
@@ -28,7 +30,8 @@ uint64_t test_mm(int argc, char *argv[]) {
     rq = 0;
     total = 0;
 
-    // Request as many blocks as we can
+    // Request  sys_write(1, "entro\n", 8);
+
     while (rq < MAX_BLOCKS && total < max_memory) {
       mm_rqs[rq].size = GetUniform(max_memory - total - 1) + 1;
       mm_rqs[rq].address = sys_malloc(mm_rqs[rq].size);
@@ -39,13 +42,12 @@ uint64_t test_mm(int argc, char *argv[]) {
       }
     }
 
-    // Set
+    // Set  sys_write(1, "entro\n", 8);
     uint32_t i;
     for (i = 0; i < rq; i++)
       if (mm_rqs[i].address)
         mem_set(mm_rqs[i].address, i, mm_rqs[i].size);
 
-    // Check
     for (i = 0; i < rq; i++)
       if (mm_rqs[i].address)
         if (!memcheck(mm_rqs[i].address, i, mm_rqs[i].size)) {
@@ -53,7 +55,7 @@ uint64_t test_mm(int argc, char *argv[]) {
           return -1;
         }
 
-    // Free
+ 
     for (i = 0; i < rq; i++)
       if (mm_rqs[i].address)
         sys_free(mm_rqs[i].address);

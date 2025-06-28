@@ -15,57 +15,76 @@ MemoryManagerADT createMemoryManager(void *const restrict memoryForMemoryManager
 }
 
 void *allocMemory(MemoryManagerADT const restrict memoryManager, const size_t memoryToAllocate) {
+    if (memoryToAllocate == 0) return NULL;
+    Block *prev = NULL;
     Block *curr = memoryManager->blockList;
+    // Buscar bloque libre adecuado
     while (curr != NULL) {
         if (curr->is_free && curr->size >= memoryToAllocate) {
             curr->is_free = false;
+            // Si el bloque es mucho más grande, partirlo
+            if (curr->size >= memoryToAllocate + sizeof(Block) + 8) {
+                Block *newBlock = (Block *)((char *)curr->address + memoryToAllocate);
+                newBlock->address = (char *)curr->address + memoryToAllocate + sizeof(Block);
+                newBlock->size = curr->size - memoryToAllocate - sizeof(Block);
+                newBlock->is_free = true;
+                newBlock->next = curr->next;
+                curr->size = memoryToAllocate;
+                curr->next = newBlock;
+            }
             return curr->address;
         }
+        prev = curr;
         curr = curr->next;
     }
-
+    // No hay bloque libre, crear uno nuevo al final
     size_t totalSize = memoryToAllocate + sizeof(Block);
     if (memoryManager->nextAddress + totalSize > memoryManager->endAddress)
         return NULL;
-
     Block *newBlock = (Block *) memoryManager->nextAddress;
     memoryManager->nextAddress += sizeof(Block);
-
     void *allocation = memoryManager->nextAddress;
     memoryManager->nextAddress += memoryToAllocate;
-
     newBlock->address = allocation;
     newBlock->size = memoryToAllocate;
     newBlock->is_free = false;
-    newBlock->next = memoryManager->blockList;
-    memoryManager->blockList = newBlock;
-
+    newBlock->next = NULL;
+    // Insertar ordenado por dirección
+    if (memoryManager->blockList == NULL || newBlock < memoryManager->blockList) {
+        newBlock->next = memoryManager->blockList;
+        memoryManager->blockList = newBlock;
+    } else {
+        Block *it = memoryManager->blockList;
+        while (it->next && it->next < newBlock) it = it->next;
+        newBlock->next = it->next;
+        it->next = newBlock;
+    }
     return allocation;
 }
 
-
-
 int freeMemory(MemoryManagerADT const restrict memoryManager, void *const memoryToFree) {
+    if (!memoryToFree) return 1;
     Block *curr = memoryManager->blockList;
+    Block *prev = NULL;
     while (curr != NULL) {
         if (curr->address == memoryToFree) {
-            if (curr->is_free)
-                return 2;
+            if (curr->is_free) return 2;
             curr->is_free = true;
-
-            Block *scan = memoryManager->blockList;
-            while (scan != NULL) {
-                if (scan != curr && scan->is_free && 
-                    (char*)scan->address + scan->size == (char*)curr->address) {
-                    scan->size += sizeof(Block) + curr->size;
-                    scan->next = curr->next;
-                    curr = scan;
-                }
-                scan = scan->next;
+            // Intentar fusionar con el siguiente
+            if (curr->next && curr->next->is_free &&
+                (char *)curr->address + curr->size == (char *)curr->next) {
+                curr->size += sizeof(Block) + curr->next->size;
+                curr->next = curr->next->next;
             }
-
+            // Intentar fusionar con el anterior
+            if (prev && prev->is_free &&
+                (char *)prev->address + prev->size == (char *)curr) {
+                prev->size += sizeof(Block) + curr->size;
+                prev->next = curr->next;
+            }
             return 0;
         }
+        prev = curr;
         curr = curr->next;
     }
     return 1;
