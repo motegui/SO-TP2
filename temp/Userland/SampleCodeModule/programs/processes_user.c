@@ -21,7 +21,7 @@ int processesInfo() {
 	}
 	printfColor("\n\nProcesses info:\n", YELLOW);
 	int i = 0;
-	printColor("  PID\tPriority\tParent\tForeground\tStatus\t   RSP   \t RBP\t   Name\n", CYAN);
+	printColor("  PID\tPriority\tParent\tForeground\tStatus\t  Name\n", CYAN);
 	while (processesInfo[i] != NULL) {
 		printf("   %d", processesInfo[i]->pid);
 		printf(processesInfo[i]->pid > 9 ? "    \t%d" : "     \t%d", processesInfo[i]->priority);
@@ -47,8 +47,7 @@ int processesInfo() {
 				printf("\t   Unknown");
 				break;
 		}
-		printf("\t%p", processesInfo[i]->rsp);
-		printf("   %p", processesInfo[i]->rbp);
+		
 		printf("\t%s\n", processesInfo[i]->name);
 		i++;
 	}

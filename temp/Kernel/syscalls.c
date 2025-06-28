@@ -124,9 +124,14 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_close_pipe((int) arg0);
             return;
         case 37:
+            // syscall 37 no usado por ahora
+            break;
+        case 38:
+            sys_processes_info();
+            return;
+        case 39:
             sys_free_processes_info(arg0);
             return;
-
         }
 
 
@@ -331,4 +336,44 @@ static uint64_t sys_create_named_pipe(char *name) {
 
 static uint64_t sys_read_pipe(int pipe_id, char *buffer, int count) {
     return pipe_read(pipe_id, buffer, count);
+}
+
+static uint64_t sys_processes_info() {
+    PCBNode *curr = get_active_process_list();
+    if (!curr) return 0;
+    
+    // Contar procesos
+    int count = 0;
+    PCBNode *temp = curr;
+    do {
+        count++;
+        temp = temp->next ? temp->next : get_active_process_list();
+    } while (temp != curr);
+    
+    // Allocar array de processInfo
+    processInfo **info = allocMemory(globalMemoryManager, (count + 1) * sizeof(processInfo *));
+    if (!info) return 0;
+    
+    // Llenar array
+    int i = 0;
+    do {
+        PCB *pcb = curr->pcb;
+        info[i] = allocMemory(globalMemoryManager, sizeof(processInfo));
+        if (info[i]) {
+            info[i]->name = strdup_kernel(pcb->name);
+            info[i]->pid = pcb->pid;
+            info[i]->parent = pcb->parent_pid;
+            info[i]->rsp = (uint64_t *)pcb->stack_pointer;
+            info[i]->rbp = (uint64_t *)((uint64_t)pcb->stack_pointer + 8); // RBP está 8 bytes después de RSP
+            info[i]->priority = pcb->priority;
+            info[i]->foreground = pcb->foreground;
+            info[i]->status = pcb->state;
+            info[i]->exitCode = 0; // Por ahora 0, se puede mejorar
+        }
+        i++;
+        curr = curr->next ? curr->next : get_active_process_list();
+    } while (curr != get_active_process_list() && i < count);
+    
+    info[i] = NULL; // Marcar fin del array
+    return (uint64_t)info;
 }

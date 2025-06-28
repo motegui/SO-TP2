@@ -45,3 +45,64 @@ make clean && make
 make clean && make
 make clean && make
 exit
+cd root
+cd temp
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+CLEAN
+clean
+clear
+clear
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make

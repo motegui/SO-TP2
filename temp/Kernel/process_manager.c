@@ -209,7 +209,7 @@ PCBNode *get_active_process_list() {
 
 void idle_process() {
     while (1) {
-        __asm__("hlt");
+        __asm__ volatile("hlt");
     }
 }
 
