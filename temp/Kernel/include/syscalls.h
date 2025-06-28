@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+// #include <pipes.h>
 
 
 void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
@@ -54,7 +55,7 @@ static void sys_exit_process();
 static uint64_t sys_malloc(uint64_t size);
 static int64_t sys_free(uint64_t ptr);
 static void sys_get_mem_status(uint64_t *used, uint64_t *free);
-static int64_t sys_sem_create(uint64_t semName, uint64_t in_value);
+static int64_t sys_sem_create(uint64_t in_value);
 static int64_t sys_sem_close(uint64_t semName);
 static int64_t sys_sem_wait(uint64_t semName);
 static int64_t sys_sem_post(uint64_t semName);

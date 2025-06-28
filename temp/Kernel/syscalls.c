@@ -9,6 +9,7 @@
 #include <process_manager.h>
 #include <scheduler.h>
 #include <mm_manager.h>
+#include <pipes.h>
 
 extern const uint64_t registers[17];
 
@@ -92,17 +93,21 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_get_mem_status((size_t *) arg0, (size_t *) arg1);
             break;
         case 27:
-            return sys_sem_create(arg0, arg1);   
+            return sys_sem_create(arg0);   
         case 29:
             return sys_sem_close(arg0);        
         case 30:
-            return sys_sem_wait(arg0);       
+            sys_sem_wait(arg0);
+            return;
         case 31:
-            return sys_sem_post(arg0);    
+            sys_sem_post(arg0);
+            return;
         case 32:
-            return sys_create_named_pipe((char*) (arg0));
+            sys_create_named_pipe((char*) (arg0));
+            return;
         case 33:
-            return sys_read_pipe((int) arg0, (char *) arg1, (int) arg2);
+            sys_read_pipe((int) arg0, (char *) arg1, (int) arg2);
+            return;
         case 34:
             return sys_write_pipe((int) arg0, (char*)arg1, (int)arg2);
         case 35:
@@ -279,29 +284,13 @@ static void sys_get_mem_status(uint64_t *used, uint64_t *free) {
     getMemoryStatus(globalMemoryManager, used, free);
 }
 
-static int64_t sys_sem_create(uint64_t  semName, uint64_t  in_value){
-    return (int64_t) sem_create((char*) semName, (int) in_value);
+static int64_t sys_sem_create(uint64_t  in_value){
+    return (int64_t) sem_create((int) in_value);
 }
 
 
 static int64_t sys_sem_close(uint64_t  semName) {
-    return (int64_t) sem_close((char *) semName);
-}
-
-static int64_t sys_sem_wait(uint64_t  semName) {
-    return (int64_t) sem_wait((char *) semName);
-}
-
-static int64_t sys_sem_post(uint64_t  semName) {
-    return (int64_t) sem_post((char *) semName);
-}
-
-static uint64_t sys_create_named_pipe(char * name){
-    return (uint64_t) pipe_open(name);
-}
-
-static uint64_t sys_read_pipe(int pipe_id, char *buffer, int count) {
-    return (uint64_t) pipe_read(pipe_id, buffer, count); // delegás al sistema de pipes
+    return (int64_t) sem_close((sem_t) semName);
 }
 
 static uint64_t sys_write_pipe(int pipe_id, char *buffer, int count){
@@ -315,5 +304,21 @@ static int64_t sys_wait_pid(uint64_t pid){
 static uint64_t sys_close_pipe(int pipe_id){
     pipe_close(pipe_id);
     return 0;
+}
 
+// Add missing sys_* function implementations
+static int64_t sys_sem_wait(uint64_t sem_id) {
+    return sem_wait((sem_t)sem_id);
+}
+
+static int64_t sys_sem_post(uint64_t sem_id) {
+    return sem_post((sem_t)sem_id);
+}
+
+static uint64_t sys_create_named_pipe(char *name) {
+    return pipe_open(name);
+}
+
+static uint64_t sys_read_pipe(int pipe_id, char *buffer, int count) {
+    return pipe_read(pipe_id, buffer, count);
 }

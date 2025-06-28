@@ -9,6 +9,9 @@
 #include <unistd.h>
 #include "lib.h"
 
+// Forward declaration for struct Semaphore to avoid circular dependency
+struct Semaphore;
+
 typedef enum {
     NEW,
     READY,
@@ -29,7 +32,7 @@ typedef struct PCB {
     int ticks;
     void *stack_base;
     void *stack_pointer;
-    int sem_id;
+    struct Semaphore *sem_id;
 } PCB;
 
 typedef struct PCBNode {

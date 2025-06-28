@@ -1,8 +1,10 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-#include "process_manager.h"
-
+#include <stdint.h>
+// Forward declaration to avoid circular dependency
+struct PCB;
+typedef struct PCB PCB;
 
 uint64_t schedule(uint64_t current_rsp); //llama al scheduler manualmente
 

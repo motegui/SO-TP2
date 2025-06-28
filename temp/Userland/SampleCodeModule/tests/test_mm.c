@@ -43,7 +43,7 @@ uint64_t test_mm(int argc, char *argv[]) {
     uint32_t i;
     for (i = 0; i < rq; i++)
       if (mm_rqs[i].address)
-        memset(mm_rqs[i].address, i, mm_rqs[i].size);
+        mem_set(mm_rqs[i].address, i, mm_rqs[i].size);
 
     // Check
     for (i = 0; i < rq; i++)

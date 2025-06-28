@@ -1,5 +1,6 @@
 #ifdef USE_BUDDY
-#include "mm_manager.h"
+#include "include/mm_manager.h"
+#include "include/lib.h"
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
@@ -41,7 +42,7 @@ MemoryManagerADT createMemoryManager(void *const restrict memoryForMemoryManager
     BuddyManager *manager = (BuddyManager *)memoryForMemoryManager;
     manager->base = (char *)managedMemory;
     manager->size = managedSize;
-    memset(manager->free_lists, 0, sizeof(manager->free_lists));
+    lib_memset(manager->free_lists, 0, sizeof(manager->free_lists));
 
     // Find maximum possible order that fits in managedSize
     int order = MAX_ORDER;

@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 #include "sync.h"
+#include "lib.h"
+#include "print_utils.h"
 
 #define PIPE_BUFFER_SIZE 4096
 #define PIPE_NAME_LEN 32

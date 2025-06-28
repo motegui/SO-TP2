@@ -9,6 +9,8 @@
 #include <colors.h>
 #include <homero.h>
 #include <mm_manager.h>
+#include "process_manager.h"
+#include "interrupts.h"
 
 // Elegí un lugar libre de la memoria del kernel, por ejemplo:
 #define MANAGER_STRUCT_SIZE  sizeof(struct MemoryManagerCDT)
@@ -34,7 +36,7 @@ typedef int (*EntryPoint)();
 
 void clearBSS(void * bssAddress, uint64_t bssSize)
 {
-	memset(bssAddress, 0, bssSize);
+	lib_memset(bssAddress, 0, bssSize);
 }
 
 void * getStackBase()

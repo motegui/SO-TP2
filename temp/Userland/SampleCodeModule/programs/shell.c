@@ -19,7 +19,7 @@ extern int loop_a_main(int argc, char **argv);
 
 int sscanf(const char *str, const char *format, int *a, int *b) {
     if (format[0] == '%' && format[1] == 'd' && format[2] == ' ' && format[3] == '%' && format[4] == 'd') {
-        int i = 0, sign = 1, val = 0, count = 0;
+        int sign = 1, val = 0, count = 0;
         //primer numero
         while (*str == ' ' || *str == '\t') str++;
         if (*str == '-') { sign = -1; str++; }

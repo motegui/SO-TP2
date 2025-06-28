@@ -5,6 +5,8 @@
 #include "scheduler.h"
 #include <videodriver.h>
 #include <print_utils.h>
+#include "sync.h"
+#include "lib.h"  // Include lib.h for the lib functions
 
 extern MemoryManagerADT globalMemoryManager;
 static PCBNode *active_processes = NULL;
@@ -291,7 +293,7 @@ void exit_process() {
     PCB *current = get_current_process();
     if (!current) return;
 
-    if (strcmp(current->name, "sh") == 0) {
+    if (lib_strcmp(current->name, "sh") == 0) {
         return;
     }
 

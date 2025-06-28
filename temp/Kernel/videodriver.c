@@ -1,8 +1,8 @@
-
 #include <stdint.h>
 #include <font.h>
 #include <videodriver.h>
 #include <lib.h>
+#include <colors.h>
 
 struct vbe_mode_info_structure {
 	uint16_t attributes;		// deprecated, only bit 7 should be of interest to you, and it indicates the mode supports a linear frame buffer.
@@ -231,8 +231,8 @@ void print_ln(char * string) {
 void move_one_line_up() {
 	char * dst = (char *) (uint64_t)(VBE_mode_info->framebuffer);
 	char * src = dst + VBE_mode_info->pitch * CHAR_HEIGHT;
-	memcpy(dst, src, VBE_mode_info->pitch * (VBE_mode_info->height - CHAR_HEIGHT));
-	memset((void *) (uint64_t)(VBE_mode_info->framebuffer + VBE_mode_info->pitch * (VBE_mode_info->height - CHAR_HEIGHT)), 0, VBE_mode_info->pitch * CHAR_HEIGHT);
+	lib_memcpy(dst, src, VBE_mode_info->pitch * (VBE_mode_info->height - CHAR_HEIGHT));
+	lib_memset((void *) (uint64_t)(VBE_mode_info->framebuffer + VBE_mode_info->pitch * (VBE_mode_info->height - CHAR_HEIGHT)), 0, VBE_mode_info->pitch * CHAR_HEIGHT);
 	line--;
 }
 
@@ -258,7 +258,7 @@ void erase_cursor() {
 }
 
 void clear_screen() {
-	memset((void *) (uint64_t)(VBE_mode_info->framebuffer), 0, VBE_mode_info->pitch * VBE_mode_info->height);
+	lib_memset((void *) (uint64_t)(VBE_mode_info->framebuffer), 0, VBE_mode_info->pitch * VBE_mode_info->height);
 	line = 1;
 	column = 0;
 	move_cursor();

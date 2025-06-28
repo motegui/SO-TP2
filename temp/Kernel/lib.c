@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-void * memset(void * destination, int32_t c, uint64_t length)
+void * lib_memset(void * destination, int32_t c, uint64_t length)
 {
 	uint8_t chr = (uint8_t)c;
 	char * dst = (char*)destination;
@@ -11,7 +11,7 @@ void * memset(void * destination, int32_t c, uint64_t length)
 	return destination;
 }
 
-void * memcpy(void * destination, const void * source, uint64_t length)
+void * lib_memcpy(void * destination, const void * source, uint64_t length)
 {
 	/*
 	* memcpy does not support overlapping buffers, so always do it
@@ -49,16 +49,20 @@ void * memcpy(void * destination, const void * source, uint64_t length)
 	return destination;
 }
 
-void strncpy(char * dest, const char * src) {
-	int i = 0;
-	while (src[i] != 0) {
+void lib_strncpy(char * dest, const char * src, uint64_t length) {
+	uint64_t i = 0;
+	while (i < length && src[i] != 0) {
 		dest[i] = src[i];
 		i++;
 	}
-	dest[i] = 0;
+	// Fill the rest with null bytes if src is shorter than length
+	while (i < length) {
+		dest[i] = 0;
+		i++;
+	}
 }
 
-int strcmp(const char *str1, const char *str2) {
+int lib_strcmp(const char *str1, const char *str2) {
 	while (*str1 && (*str1 == *str2)) {
 		str1++;
 		str2++;
@@ -66,7 +70,7 @@ int strcmp(const char *str1, const char *str2) {
 	return *(const unsigned char *)str1 - *(const unsigned char *)str2;
 }
 
-char strchr(const char *s, int c) {
+char *lib_strchr(const char *s, int c) {
     while (*s) {
         if (*s == (char)c) {
             return (char *)s;

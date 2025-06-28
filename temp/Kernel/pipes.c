@@ -1,4 +1,5 @@
 #include "pipes.h"
+#include "lib.h"
 
 static Pipe pipe_table[MAX_PIPES];
 
@@ -16,14 +17,14 @@ void init_pipes(){
 //abre el pipe si existe, y sino lo crea
 int pipe_open(const char *name){
     for (int i = 0; i < MAX_PIPES; i++) {
-        if (pipe_table[i].open && strcmp(pipe_table[i].name, name) == 0) {
+        if (pipe_table[i].open && lib_strcmp(pipe_table[i].name, name) == 0) {
             return i;
         }
     }
 
     for (int i = 0; i < MAX_PIPES; i++) {
         if (!pipe_table[i].open) {
-            strncpy(pipe_table[i].name, name, PIPE_NAME_LEN);
+            lib_strncpy(pipe_table[i].name, name, PIPE_NAME_LEN);
 
             pipe_table[i].read_index = 0;
             pipe_table[i].write_index = 0;
