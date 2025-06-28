@@ -13,5 +13,6 @@ void yield();// el proceso actual cede el CPU
 PCB *pick_next_process();
 
 void load_context(PCB *pcb) __attribute__((noreturn));
+int get_foreground_pid();
 
 #endif

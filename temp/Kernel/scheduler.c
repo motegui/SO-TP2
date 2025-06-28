@@ -51,3 +51,6 @@ PCB *pick_next_process() {
 
     return best;
 }
+int get_foreground_pid() {
+    return get_current_process()->pid;
+}

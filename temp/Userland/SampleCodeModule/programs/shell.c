@@ -12,10 +12,14 @@
 #include <date_time.h>
 #include <process_userland.h>
 
-#define COMMANDS_QUANTITY 22
+#define COMMANDS_QUANTITY 25
 char * test_mm_args[3];
 
 extern int loop_a_main(int argc, char **argv);
+
+// Variable global para guardar el PID del último proceso foreground
+static int last_fg_pid = -1;
+static int pipe_counter = 0;
 
 int sscanf(const char *str, const char *format, int *a, int *b) {
     if (format[0] == '%' && format[1] == 'd' && format[2] == ' ' && format[3] == '%' && format[4] == 'd') {
@@ -45,8 +49,13 @@ int sscanf(const char *str, const char *format, int *a, int *b) {
     return 0;
 }
 int wait(int pid, int piped, int background) {
-	if (!piped && !background)
+	if (!piped && !background) {
+		last_fg_pid = pid;  // Guardar PID del proceso foreground
 		sys_wait_pid(pid);
+		last_fg_pid = -1;   // Limpiar después de que termine
+	} else {
+		last_fg_pid = -1;   // No es foreground, limpiar
+	}
 	return pid;
 }
 
@@ -54,7 +63,7 @@ int wait(int pid, int piped, int background) {
 
 static char *commandsNames[] = {
     "help", "time", "date", "registers", "fillregs", "div0", "invalidop", "pong", "clear",
-    "mem", "ps", "kill", "nice", "block", "unblock", "cat","wc", "filter", "test_mm", "test_sync", "test_prio", "test_processes"
+    "mem", "ps", "kill", "nice", "block", "unblock", "cat","wc", "filter", "testmm", "testsync", "testprio", "testpro", "phylos", "loop", "yield"
 };
 
 static char *commands[] = {
@@ -76,10 +85,13 @@ static char *commands[] = {
 	"\tcat: prints stdin as it is received.\n",
     "\tfilter: prints stdin without vowels.\n",
     "\twc: counts the number of lines from stdin.\n",
-	"\ttest_mm: test memory manager.\n",
-	"\ttest_sync: test synchronization (semaphores).\n",
-    "\ttest_prio: test process priorities.\n",
-    "\ttest_processes: test process creation, kill, block, unblock.\n",
+	"\ttestmm: test memory manager.\n",
+	"\ttestsync: test synchronization (semaphores).\n",
+    "\ttestprio: test process priorities.\n",
+    "\ttestpro: test process creation, kill, block, unblock.\n",
+    "\tphylos: dining philosophers problem simulation.\n",
+    "\tloop: runs a simple loop process.\n",
+    "\tyield: yields the CPU to other processes.\n",
 };
 char * loop_args[2] = {"loop", NULL};
 char * test_mm_args[3];
@@ -90,7 +102,7 @@ void shell() {
 	printfColor("Shell PID: %d\n", GREEN, sys_get_pid());
 	printColor("\nHomerOS: $> ", GREEN);
 
-	int count = 0;	
+	int count = 0;
 	char buffer[1024] = {0};
 	char oldBuffer[1024] = {0};
 	int defaultFds[2] = {0, 1};
@@ -98,6 +110,25 @@ void shell() {
 	char flag = 0; // Used for up arrow
 	while(1) {
 		unsigned char c = get_char();
+		if (c == 4) { // Ctrl+D
+			printColor("\n[Shell] EOF recibido. Cerrando shell...\n", RED);
+			return;
+		} else if (c == 3) { // Ctrl+C
+			// Matar proceso foreground (si hay uno)
+			if (last_fg_pid > 0) {
+				printColor("\n[Shell] Ctrl+C: Matando proceso foreground (PID: ", RED);
+				printfColor("%d", RED, last_fg_pid);
+				printColor(")\n", RED);
+				sys_kill_process(last_fg_pid);
+				last_fg_pid = -1;
+			} else {
+				printColor("\n[Shell] Ctrl+C: No hay proceso foreground para matar\n", RED);
+			}
+			printColor("\nHomerOS: $> ", GREEN);
+			count = 0;
+			buffer[0] = 0;
+			continue;
+		}
 		if (c == '\n') {
 			buffer[count] = 0;
 			if (count > 0) {
@@ -114,7 +145,7 @@ void shell() {
 				count--;
 			}
 		} else if (c == '\t') {
-			// analize count letters of the buffer and see if match with any command, if so, complete the command
+			// analize count letters of the buffer y autocompletar
 			int i = 0;
 			while (i < COMMANDS_QUANTITY && !strncmp(buffer, commandsNames[i], count)) {
 				i++;
@@ -200,7 +231,41 @@ void analyze_piped_command(char *buffer, int count) {
         i++;
     }
 
-    int pipe_fd = sys_pipe_open("default_pipe");
+    // Generar nombre único para el pipe
+    char pipe_name[32];
+    pipe_counter++;
+    int len = 0;
+    pipe_name[len++] = 'p';
+    pipe_name[len++] = 'i';
+    pipe_name[len++] = 'p';
+    pipe_name[len++] = 'e';
+    pipe_name[len++] = '_';
+    
+    // Convertir el contador a string
+    int temp = pipe_counter;
+    char num_str[16];
+    int num_len = 0;
+    if (temp == 0) {
+        num_str[num_len++] = '0';
+    } else {
+        while (temp > 0) {
+            num_str[num_len++] = '0' + (temp % 10);
+            temp /= 10;
+        }
+        // Invertir el string
+        for (int j = 0; j < num_len / 2; j++) {
+            char aux = num_str[j];
+            num_str[j] = num_str[num_len - 1 - j];
+            num_str[num_len - 1 - j] = aux;
+        }
+    }
+    
+    for (int j = 0; j < num_len; j++) {
+        pipe_name[len++] = num_str[j];
+    }
+    pipe_name[len] = 0;
+
+    int pipe_fd = sys_pipe_open(pipe_name);
 
     int fds1[2] = {0, pipe_fd};
     int fds2[2] = {pipe_fd, 1};
