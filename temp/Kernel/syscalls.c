@@ -13,6 +13,8 @@
 
 extern const uint64_t registers[17];
 
+static uint64_t sys_mem_data();
+
 void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5) {
     switch(id) {
         case 0:
@@ -124,8 +126,8 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_close_pipe((int) arg0);
             return;
         case 37:
-            // syscall 37 no usado por ahora
-            break;
+            *((uint64_t*)arg0) = sys_mem_data();
+            return;
         case 38:
             sys_processes_info();
             return;
@@ -376,4 +378,11 @@ static uint64_t sys_processes_info() {
     
     info[i] = NULL; // Marcar fin del array
     return (uint64_t)info;
+}
+
+static memoryData mem_info_buffer;
+
+static uint64_t sys_mem_data() {
+    getMemoryData(&mem_info_buffer);
+    return (uint64_t)&mem_info_buffer;
 }

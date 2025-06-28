@@ -1,14 +1,16 @@
 #include "mm_manager.h"
 #include <string.h>
+#include <stdint.h>
 
 MemoryManagerADT globalMemoryManager = NULL;
-
+static uint64_t total_memory = 0;
 
 MemoryManagerADT createMemoryManager(void *const restrict memoryForMemoryManager, void *const restrict managedMemory, size_t managedSize) {
 	MemoryManagerADT memoryManager = (MemoryManagerADT) memoryForMemoryManager;
 	memoryManager->nextAddress = (char *) managedMemory;
 	memoryManager->endAddress = memoryManager->nextAddress + managedSize;
 	memoryManager->blockList = NULL;
+	total_memory = managedSize;
 	return memoryManager;
 }
 
@@ -81,4 +83,12 @@ void getMemoryStatus(MemoryManagerADT const restrict memoryManager, size_t *used
 			*used += curr->size;
 		curr = curr->next;
 	}
+}
+
+void getMemoryData(memoryData *data) {
+    size_t used, free;
+    getMemoryStatus(globalMemoryManager, &used, &free);
+    data->used = used;
+    data->free = free;
+    data->total = total_memory;
 }

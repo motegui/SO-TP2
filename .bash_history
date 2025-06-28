@@ -106,3 +106,30 @@ make clean && make
 make clean && make
 make clean && make
 make clean && make
+cd root
+cd temp
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+A
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make
+make clean && make

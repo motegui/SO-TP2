@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef USE_BUDDY
 
@@ -42,6 +43,10 @@
 
 #endif
 
+typedef struct {
+    uint64_t free, used, total;
+} memoryData;
+
 extern MemoryManagerADT globalMemoryManager;
 
 //común para ambos managers
@@ -57,5 +62,7 @@ int freeMemory(MemoryManagerADT const restrict memoryManager,
 
 void getMemoryStatus(MemoryManagerADT const restrict memoryManager,
                      size_t *used, size_t *free);
+
+void getMemoryData(memoryData *data);
 
 #endif // MEMORY_MANAGER_H

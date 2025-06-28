@@ -5,7 +5,7 @@
 #include <uStrings.h>
 #include <usyscalls.h>
 void memInfo() {
-	MemoryDataPtr memData = sys_mem_data();
+	MemoryDataPtr memData = (MemoryDataPtr) sys_mem_data();
 	printfColor("\n\nMemory info:\n", YELLOW);
 	printfColor("\tTotal memory: %d bytes\n", CYAN, memData->total);
 	printfColor("\tUsed memory: %d bytes\n", CYAN, memData->used);

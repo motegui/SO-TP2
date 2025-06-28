@@ -77,7 +77,7 @@ uint64_t sys_wait_pid(uint64_t pid);
 uint64_t sys_close_pipe(int pipe_id);
 
 // Additional function declarations
-MemoryDataPtr sys_mem_data();
+uint64_t sys_mem_data();
 ProcessInfoPtr * sys_processes_info();
 int64_t sys_change_priority(int pid, int new_priority);
 int sys_pipe_open(const char *name);

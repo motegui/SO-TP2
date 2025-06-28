@@ -163,9 +163,10 @@ uint64_t sys_close_pipe(int pipe_id) {
 
 
 
-MemoryDataPtr sys_mem_data() {
-	return (MemoryDataPtr) sys_call(
-	    (uint64_t) 37, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+uint64_t sys_mem_data() {
+    uint64_t ptr;
+    sys_call(37, (uint64_t)&ptr, 0, 0, 0, 0);
+    return ptr;
 }
 
 ProcessInfoPtr * sys_processes_info() {

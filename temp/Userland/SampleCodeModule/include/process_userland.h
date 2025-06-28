@@ -16,7 +16,7 @@
 
 
 typedef struct memoryData {
-	uint32_t free, used, total;
+	uint64_t free, used, total;
 } memoryData;
 
 typedef struct processInfo {
