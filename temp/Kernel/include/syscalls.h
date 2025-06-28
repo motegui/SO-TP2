@@ -62,7 +62,7 @@ static uint64_t sys_write_pipe(int pipe_id, char *buffer, int count);
 static uint64_t sys_read_pipe(int pipe_id, char *buffer, int count);
 static uint64_t sys_create_named_pipe(char * name);
 static int64_t sys_wait_pid(uint64_t pid);
-
+static uint64_t sys_close_pipe(int pipe_id);
 
 
 #endif

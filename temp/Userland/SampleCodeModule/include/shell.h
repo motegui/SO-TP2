@@ -8,6 +8,6 @@ void shell();
 
 int commandMatch(char * str1, char * command, int count);
 
-void analizeBuffer(char * buffer, int count, int piped, int *fds);
+int analizeBuffer(char * buffer, int count, int piped, int *fds);
 
 #endif

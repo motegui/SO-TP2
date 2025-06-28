@@ -109,7 +109,12 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             return sys_write_pipe((int) arg0, (char*)arg1, (int)arg2);
         case 35:
             return (int64_t) sys_wait_pid(arg0);
+        case 36:
+            return sys_close_pipe((int) arg0);
+
         }
+
+
 }
 
 
@@ -298,4 +303,10 @@ static uint64_t sys_write_pipe(int pipe_id, char *buffer, int count){
 
 static int64_t sys_wait_pid(uint64_t pid){
     return (int64_t) wait_pid((int)pid);
+}
+
+static uint64_t sys_close_pipe(int pipe_id){
+    pipe_close(pipe_id);
+    return 0;
+
 }

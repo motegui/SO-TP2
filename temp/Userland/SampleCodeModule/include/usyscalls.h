@@ -69,4 +69,6 @@ int64_t sys_sem_post(uint64_t semName);
 
 uint64_t sys_wait_pid(uint64_t pid);
 
+uint64_t sys_close_pipe(int pipe_id);
+
 #endif

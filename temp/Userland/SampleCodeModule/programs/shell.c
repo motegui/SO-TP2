@@ -158,6 +158,44 @@ int commandMatch(char * str1, char * command, int count) {
 	return str1[i] == command[i];
 }
 
+int has_pipe(char *buffer) {
+    while (*buffer != 0) {
+        if (*buffer == '/')
+            return 1;
+        buffer++;
+    }
+    return 0;
+}
+
+void analyze_piped_command(char *buffer, int count) {
+    char *commands[2];
+    int i = 0;
+    while (buffer[i] != 0) {
+        if (buffer[i] == '/') {
+            buffer[i] = 0;
+            commands[0] = buffer;
+            commands[1] = &buffer[i + 1];
+            break;
+        }
+        i++;
+    }
+
+    int pipe_fd = sys_pipe_open("default_pipe");
+
+    int fds1[2] = {0, pipe_fd};
+    int fds2[2] = {pipe_fd, 1};
+
+    int pid1 = analizeBuffer(commands[0], strlen(commands[0]), 1, fds1);
+    int pid2 = analizeBuffer(commands[1], strlen(commands[1]), 1, fds2);
+
+	if (pid1 > 0 && pid2 > 0) {
+		sys_wait_pid(pid1);
+		sys_wait_pid(pid2);
+	}
+
+    sys_close_pipe(pipe_fd);
+}
+
 
 int isBackground(char * buff) {
 	int j = 0;
@@ -172,10 +210,15 @@ int isBackground(char * buff) {
 }
 
 
-void analizeBuffer(char * buffer, int count, int piped, int *fds) {
+int analizeBuffer(char * buffer, int count, int piped, int *fds) {
 
 	if (count <= 0)
 		return;
+
+	if (has_pipe(buffer)) {
+		analyze_piped_command(buffer, count);
+		return 0;
+	}
 
 	int background = isBackground(buffer);
 
@@ -261,13 +304,12 @@ void analizeBuffer(char * buffer, int count, int piped, int *fds) {
     }
 	 else if (commandMatch(buffer, "cat", count)) {
 		char *args[64];
-		parse_command(args, buffer, 64);
-		int pid = sys_create_process("cat", !background, 1, &cat, args);
+		int pid = sys_create_process("cat", !background, fds, &cat, args);
 		return wait(pid, piped, background);
 	}
 	 else if (commandMatch(buffer, "wc", count)) {
 		char * args[2] = {"wc", NULL};
-		int pid = sys_create_process("wc", !background, &fds, &wc, args);
+		int pid = sys_create_process("wc", !background, fds, &wc, args);
 		return wait(pid, piped, background);
 	}
 	else if (commandMatch(buffer, "filter", count)) {

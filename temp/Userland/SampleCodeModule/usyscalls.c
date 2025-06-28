@@ -128,8 +128,6 @@ int64_t sys_sem_create(uint64_t semName, uint64_t in_value) {
     return sys_call(27, semName, in_value, 0, 0, 0);
 }
 
-
-
 int64_t sys_sem_close(uint64_t semName) {
     return sys_call(29, semName, 0, 0, 0, 0);
 }
@@ -142,6 +140,22 @@ int64_t sys_sem_post(uint64_t semName) {
     return sys_call(31, semName, 0, 0, 0, 0);
 }
 
+int sys_pipe_open(const char *name) {
+    return sys_call(32, (uint64_t)name, 0, 0, 0, 0);
+}
+
+int sys_pipe_read(int pipe_id, char *buffer, unsigned int count) {
+    return sys_call(33, pipe_id, (uint64_t)buffer, count, 0, 0);
+}
+
+int sys_pipe_write(int pipe_id, const char *buffer, unsigned int count) {
+    return sys_call(34, pipe_id, (uint64_t)buffer, count, 0, 0);
+}
+
 uint64_t sys_wait_pid(uint64_t pid){
     return sys_call(35, pid,0,0,0,0);
+}
+
+uint64_t sys_close_pipe(int pipe_id) {
+    return sys_call(36, pipe_id, 0, 0, 0, 0);
 }
