@@ -1,9 +1,10 @@
 #ifndef PROGRAMS_H
 #define PROGRAMS_H
+#define EOF -1
 
-int cat(int argc, char **argv);
-int wc(int argc, char **argv);
-int filter(int argc, char **argv);
+int cat(char ** args);
+int wc(char **args);
+int filter(char **args);
 
 //para phylo.c
 void philosopher();

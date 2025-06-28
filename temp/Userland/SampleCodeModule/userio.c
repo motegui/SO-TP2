@@ -4,9 +4,7 @@
 #include <colors.h>
 #include <uStrings.h>
 
-#ifndef NULL
-#define NULL ((void*)0)
-#endif
+
 
 extern void fillRegs();
 
@@ -210,4 +208,16 @@ char * getDate() {
 	static char bufferDate[9];
 	sys_get_date(bufferDate);
 	return bufferDate;
+}
+
+void print_int(int num) {
+    char buf[12];
+    intToStr(num, buf);
+    print(buf);
+}
+
+void safe_print(char *str) {
+    for (int i = 0; i < 256 && str[i] != '\0'; i++) {
+        print_char(str[i]);
+    }
 }

@@ -145,13 +145,19 @@ void shell() {
 
 int commandMatch(char * str1, char * command, int count) {
 	int i = 0;
-	if (count != strlen(command))
-		return 0;
-	while (str1[i] != 0 && command[i] != 0 && str1[i] == command[i] && i < count) {
+	while (*str1 == ' ') {
+		str1++;
+	}
+	while (i < count && str1[i] != 0 && command[i] != 0 && str1[i] == command[i]) {
 		i++;
+		if (str1[i] == ' ') {
+			i--;
+			break;
+		}
 	}
 	return str1[i] == command[i];
 }
+
 
 int isBackground(char * buff) {
 	int j = 0;
@@ -254,10 +260,11 @@ void analizeBuffer(char * buffer, int count, int piped, int *fds) {
         return pid;
     }
 	 else if (commandMatch(buffer, "cat", count)) {
-		char * args[2] = {"cat", NULL};
+		char *args[64];
+		parse_command(args, buffer, 64);
 		int pid = sys_create_process("cat", !background, 1, &cat, args);
 		return wait(pid, piped, background);
-	 }
+	}
 	 else if (commandMatch(buffer, "wc", count)) {
 		char * args[2] = {"wc", NULL};
 		int pid = sys_create_process("wc", !background, &fds, &wc, args);
@@ -271,4 +278,16 @@ void analizeBuffer(char * buffer, int count, int piped, int *fds) {
 	else {
 			printfColor("\nCommand not found. Type \"help\" for command list\n", RED);
     }
+}
+
+void parse_command(char **argv, char *buffer, int max_args) {
+	int i = 0, j = 0;
+	while (buffer[i] != 0 && j < max_args) {
+		while (buffer[i] == ' ') i++;
+		if (buffer[i] == 0) break;
+		argv[j++] = &buffer[i];
+		while (buffer[i] != 0 && buffer[i] != ' ') i++;
+		if (buffer[i] != 0) buffer[i++] = 0;
+	}
+	argv[j] = NULL;
 }

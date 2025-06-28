@@ -1,40 +1,36 @@
 #include <usyscalls.h>
+#include "userio.h"
+#include "programs.h"
 
 #define STDIN 0
 #define STDOUT 1
-#define SIZE 128  // tamaño del buffer de línea
+#define SIZE 128
+#define EOF -1
 
-int cat(int argc, char **argv) {
-    char buff[SIZE];
+int cat(char ** args) {
+    char buff[SIZE] = {0};
     char c;
     int i = 0;
+    print_char('\n');
 
-    while (1) {
-        int read_res = sys_read(STDIN, &c, 1);
-
-        if (read_res <= 0) {
-            break;  // EOF o error
-        }
-
-        if (c == 4) {  // Ctrl+D (EOF)
-            break;
-        }
-
-        if (c == '\b' || c == 127) {
+    while ((c = get_char()) != (char) EOF) {
+        if (c == '\b') {
             if (i > 0) {
                 i--;
-                sys_write(STDOUT, "\b \b", 3);
+                print_char('\b');
             }
         } else if (c == '\n') {
-            sys_write(STDOUT, "\n", 1);
-            sys_write(STDOUT, buff, i);
-            sys_write(STDOUT, "\n", 1);
-            i = 0;
-        } else if (c >= 32 && c < 127) {
-            if (i < SIZE - 1) {
-                buff[i++] = c;
-                sys_write(STDOUT, &c, 1);
+            print_char('\n');
+            for (int j = 0; j < i; j++) {
+                print_char(buff[j]);
             }
+            i = 0;
+            print_char('\n');
+        } else if (c > 20 && c < 127 && i < SIZE - 1) {
+            buff[i++] = c;
+            print_char(c);
+        }else if (c == 0x01) {
+            sys_exit_process();
         }
     }
 

@@ -6,6 +6,9 @@
 #define STDIN 0
 #define STDOUT 1
 #define STDERR 2
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
 
 void print(char* string);
 
