@@ -41,7 +41,6 @@ uint64_t test_mm(int argc, char *argv[]) {
       }
     }
 
-    // Set  sys_write(1, "entro\n", 8);
     uint32_t i;
     for (i = 0; i < rq; i++)
       if (mm_rqs[i].address)

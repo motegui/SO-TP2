@@ -12,9 +12,8 @@
 #include "process_manager.h"
 #include "interrupts.h"
 
-// Elegí un lugar libre de la memoria del kernel, por ejemplo:
 #define MANAGER_STRUCT_SIZE  sizeof(struct MemoryManagerCDT)
-#define MANAGED_MEMORY_SIZE  0x100000  // 1 MiB, ajustá si necesitás más
+#define MANAGED_MEMORY_SIZE  0x100000 
 
 
 
@@ -43,8 +42,8 @@ void * getStackBase()
 {
 	return (void*)(
 		(uint64_t)&endOfKernel
-		+ PageSize * 8				//The size of the stack itself, 32KiB
-		- sizeof(uint64_t)			//Begin at the top of the stack
+		+ PageSize * 8				
+		- sizeof(uint64_t)			
 	);
 }
 

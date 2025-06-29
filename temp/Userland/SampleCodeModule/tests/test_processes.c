@@ -9,7 +9,6 @@ typedef struct P_rq {
   enum ProcessState state;
 } p_rq;
 
-// Funciones auxiliares para bloquear y desbloquear procesos usando syscalls
 int my_block(int32_t pid) {
     sys_block_process(pid);
     return 0; 

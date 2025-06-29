@@ -17,13 +17,11 @@ char * test_mm_args[3];
 
 extern int loop_a_main(int argc, char **argv);
 
-// Variable global para guardar el PID del último proceso foreground
 static int last_fg_pid = -1;
 
 int sscanf(const char *str, const char *format, int *a, int *b) {
     if (format[0] == '%' && format[1] == 'd' && format[2] == ' ' && format[3] == '%' && format[4] == 'd') {
         int sign = 1, val = 0, count = 0;
-        //primer numero
         while (*str == ' ' || *str == '\t') str++;
         if (*str == '-') { sign = -1; str++; }
         while (*str >= '0' && *str <= '9') {
@@ -32,7 +30,6 @@ int sscanf(const char *str, const char *format, int *a, int *b) {
         }
         *a = sign * val;
         count++;
-        //segundo numero
         while (*str == ' ' || *str == '\t') str++;
         sign = 1; val = 0;
         if (*str == '-') { sign = -1; str++; }
@@ -144,7 +141,6 @@ void shell() {
 				count--;
 			}
 		} else if (c == '\t') {
-			// analize count letters of the buffer y autocompletar
 			int i = 0;
 			while (i < COMMANDS_QUANTITY && !strncmp(buffer, commandsNames[i], count)) {
 				i++;

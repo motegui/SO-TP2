@@ -85,7 +85,7 @@ void keyboard_handler() {
                 elem_count++;
                 return;
             } else if (c == 'c') {
-                int fg_pid = get_foreground_pid();  // implementá esto
+                int fg_pid = get_foreground_pid(); 
                 if (fg_pid > 0)
                     kill_process(fg_pid);           // o sys_kill(fg_pid)
                 return;

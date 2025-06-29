@@ -76,8 +76,7 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_kill_process((int) arg0);
             break;
         case 19:
-            sys_nice_process(arg0, arg1); //change priority
-            break;
+            sys_nice_process(arg0, arg1);
         case 20:
             sys_block_process(arg0);
             break;
@@ -88,13 +87,13 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_yield();
             break;
         case 23:
-            sys_wait_for_children(); //done pero habria que chequearla
+            sys_wait_for_children(); 
             break;
        case 24:
             sys_malloc(arg0);
             return;
         case 25:
-            sys_free(arg0);     // Liberar memoria (arg0 = ptr) //puntero a chequear
+            sys_free(arg0);   
             return;
         case 26:
             sys_get_mem_status((size_t *) arg0, (size_t *) arg1);
@@ -228,7 +227,7 @@ static void sys_get_screensize(uint64_t width, uint64_t height) {
 
 static int64_t sys_create_process(uint64_t name, uint64_t priority, uint64_t foreground, uint64_t entry_point, uint64_t args) {
     PCB *pcb = create_process((const char *)name, get_current_process()->pid, priority, foreground, (void *) entry_point, (char **)args);
-    if (!pcb) return -1; //aca va lo del profe
+    if (!pcb) return -1; 
     return pcb->pid;
 }
 
@@ -270,7 +269,6 @@ static void sys_unblock_process(uint64_t pid){
     unblock_process((int)pid);
 }
 
-// el proceso actual renuncia al CPU
 static void sys_yield() {
     yield();
 }
@@ -339,7 +337,6 @@ static uint64_t sys_processes_info() {
     PCBNode *curr = get_active_process_list();
     if (!curr) return 0;
     
-    // Contar procesos
     int count = 0;
     PCBNode *temp = curr;
     do {
@@ -347,11 +344,9 @@ static uint64_t sys_processes_info() {
         temp = temp->next ? temp->next : get_active_process_list();
     } while (temp != curr);
     
-    // Allocar array de processInfo
     processInfo **info = allocMemory(globalMemoryManager, (count + 1) * sizeof(processInfo *));
     if (!info) return 0;
     
-    // Llenar array
     int i = 0;
     do {
         PCB *pcb = curr->pcb;
@@ -361,17 +356,17 @@ static uint64_t sys_processes_info() {
             info[i]->pid = pcb->pid;
             info[i]->parent = pcb->parent_pid;
             info[i]->rsp = (uint64_t *)pcb->stack_pointer;
-            info[i]->rbp = (uint64_t *)((uint64_t)pcb->stack_pointer + 8); // RBP está 8 bytes después de RSP
+            info[i]->rbp = (uint64_t *)((uint64_t)pcb->stack_pointer + 8);
             info[i]->priority = pcb->priority;
             info[i]->foreground = pcb->foreground;
             info[i]->status = pcb->state;
-            info[i]->exitCode = 0; // Por ahora 0, se puede mejorar
+            info[i]->exitCode = 0; 
         }
         i++;
         curr = curr->next ? curr->next : get_active_process_list();
     } while (curr != get_active_process_list() && i < count);
     
-    info[i] = NULL; // Marcar fin del array
+    info[i] = NULL; 
     return (uint64_t)info;
 }
 

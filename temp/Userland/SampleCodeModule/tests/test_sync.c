@@ -5,20 +5,19 @@
 #define SEM_ID "sem"
 #define TOTAL_PAIR_PROCESSES 2
 
-// Simple hash function to convert string to uint64_t
 uint64_t string_hash(const char *str) {
     uint64_t hash = 5381;
     int c;
     while ((c = *str++))
-        hash = ((hash << 5) + hash) + c; // hash * 33 + c
+        hash = ((hash << 5) + hash) + c;
     return hash;
 }
 
-int64_t global; // shared memory
+int64_t global; 
 
 void slowInc(int64_t *p, int64_t inc) {
     uint64_t aux = *p;
-    sys_yield(); // This makes the race condition highly probable
+    sys_yield(); 
     aux += inc;
     *p = aux;
 }
@@ -79,7 +78,6 @@ uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
         sys_wait_pid(pids[i + TOTAL_PAIR_PROCESSES]);
     }
 
-    // Imprimir el valor final de global
     char buffer[64];
     int len = 0, tmp = global;
     if (tmp == 0) {
