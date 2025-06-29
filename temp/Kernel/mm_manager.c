@@ -16,7 +16,6 @@ MemoryManagerADT createMemoryManager(void *const restrict memoryForMemoryManager
 
 void *allocMemory(MemoryManagerADT const restrict memoryManager, const size_t memoryToAllocate) {
     if (memoryToAllocate == 0) return NULL;
-    Block *prev = NULL;
     Block *curr = memoryManager->blockList;
     // Buscar bloque libre adecuado
     while (curr != NULL) {
@@ -34,7 +33,6 @@ void *allocMemory(MemoryManagerADT const restrict memoryManager, const size_t me
             }
             return curr->address;
         }
-        prev = curr;
         curr = curr->next;
     }
     // No hay bloque libre, crear uno nuevo al final

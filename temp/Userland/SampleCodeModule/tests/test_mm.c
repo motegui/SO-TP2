@@ -13,7 +13,6 @@ typedef struct MM_rq {
 
 
 uint64_t test_mm(int argc, char *argv[]) {
-sys_write(1, "test_mm\n", 8);
 
   mm_rq mm_rqs[MAX_BLOCKS];
   uint8_t rq;

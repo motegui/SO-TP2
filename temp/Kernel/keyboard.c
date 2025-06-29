@@ -120,3 +120,20 @@ char get_char_no_block() {
         return 0;
     return get_char();
 }
+
+int is_keyboard_buffer_empty() {
+    return elem_count == 0;
+}
+
+char dequeue_keyboard_char() {
+    if (elem_count == 0)
+        return 0;
+
+    char c = buffer[read_index++];
+    elem_count--;
+
+    if (read_index == BUFFER_SIZE)
+        read_index = 0;
+
+    return c;
+}

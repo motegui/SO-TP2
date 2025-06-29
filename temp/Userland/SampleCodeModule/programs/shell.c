@@ -19,7 +19,6 @@ extern int loop_a_main(int argc, char **argv);
 
 // Variable global para guardar el PID del último proceso foreground
 static int last_fg_pid = -1;
-static int pipe_counter = 0;
 
 int sscanf(const char *str, const char *format, int *a, int *b) {
     if (format[0] == '%' && format[1] == 'd' && format[2] == ' ' && format[3] == '%' && format[4] == 'd') {
@@ -231,41 +230,7 @@ void analyze_piped_command(char *buffer, int count) {
         i++;
     }
 
-    // Generar nombre único para el pipe
-    char pipe_name[32];
-    pipe_counter++;
-    int len = 0;
-    pipe_name[len++] = 'p';
-    pipe_name[len++] = 'i';
-    pipe_name[len++] = 'p';
-    pipe_name[len++] = 'e';
-    pipe_name[len++] = '_';
-    
-    // Convertir el contador a string
-    int temp = pipe_counter;
-    char num_str[16];
-    int num_len = 0;
-    if (temp == 0) {
-        num_str[num_len++] = '0';
-    } else {
-        while (temp > 0) {
-            num_str[num_len++] = '0' + (temp % 10);
-            temp /= 10;
-        }
-        // Invertir el string
-        for (int j = 0; j < num_len / 2; j++) {
-            char aux = num_str[j];
-            num_str[j] = num_str[num_len - 1 - j];
-            num_str[num_len - 1 - j] = aux;
-        }
-    }
-    
-    for (int j = 0; j < num_len; j++) {
-        pipe_name[len++] = num_str[j];
-    }
-    pipe_name[len] = 0;
-
-    int pipe_fd = sys_pipe_open(pipe_name);
+    int pipe_fd = sys_pipe_open("default_pipe");
 
     int fds1[2] = {0, pipe_fd};
     int fds2[2] = {pipe_fd, 1};
@@ -306,10 +271,11 @@ int analizeBuffer(char * buffer, int count, int piped, int * fds) {
 	if (count <= 0)
 		return -1;
 
-	if (has_pipe(buffer)) {
+	if (has_pipe(buffer) && !piped) {
 		analyze_piped_command(buffer, count);
 		return 0;
 	}
+
 
 	int background = isBackground(buffer);
 
@@ -435,7 +401,7 @@ int analizeBuffer(char * buffer, int count, int piped, int * fds) {
 	// TESTPRO
 	else if (commandMatch(buffer, "testpro", count)) {
 		parse_command(test_pro_args, buffer, 3);
-		int pid = sys_create_process("testpro", 1, !background, &test_processes, test_pro_args);
+		int pid = sys_create_process("testpro", 1, !background, &test_processes, test_pro_args + 1);
 		return wait(pid, piped, background);
 	}
 

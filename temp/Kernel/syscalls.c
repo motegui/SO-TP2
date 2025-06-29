@@ -10,6 +10,7 @@
 #include <scheduler.h>
 #include <mm_manager.h>
 #include <pipes.h>
+#include <interrupts.h>
 
 extern const uint64_t registers[17];
 
@@ -140,28 +141,22 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
 }
 
 
-// static int64_t sys_read(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t shouldNotBlock) {
-//     char c = shouldNotBlock ? get_char_no_block() : get_char();
-//     if (c == 0)
-//         return 0;
-
-//     ((char *)buffer)[0] = c;
-//     return 1;
-
-// }
 int64_t sys_read(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t shouldNotBlock) {
-	if (fd == STDIN) {
-		int i = 0;
-		char c;
-		char *buff = (char *)buffer;
-		while (i < length && (c = (shouldNotBlock ? get_char_no_block() : get_char())) != 0) {
-			buff[i++] = c;
-		}
-		return i;
-	} else {
-		// suponiendo que fd representa directamente un pipe
-		return pipe_read(fd, (char *)buffer, length);
-	}
+    if (fd != STDIN || length == 0)
+        return -1;
+
+    char *buff = (char *)buffer;
+    int i = 0;
+
+    while (i < length) {
+        while (is_keyboard_buffer_empty()) {
+            _hlt();
+        }
+
+        buff[i++] = dequeue_keyboard_char();
+    }
+
+    return i;
 }
 
 static void sys_write(uint64_t fd, uint64_t buffer, uint64_t length) {
