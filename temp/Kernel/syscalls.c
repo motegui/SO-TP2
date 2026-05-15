@@ -99,7 +99,7 @@ void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
             sys_get_mem_status((size_t *) arg0, (size_t *) arg1);
             break;
         case 27:
-            sys_sem_create(arg0);
+            sys_sem_create(arg0, arg1);
             return;
         case 29:
             sys_sem_close(arg0);
@@ -294,7 +294,8 @@ static void sys_get_mem_status(uint64_t *used, uint64_t *free) {
     getMemoryStatus(globalMemoryManager, used, free);
 }
 
-static int64_t sys_sem_create(uint64_t  in_value){
+static int64_t sys_sem_create(uint64_t semName, uint64_t in_value){
+    (void)semName; // semName is unused in this implementation
     return (int64_t) sem_create((int) in_value);
 }
 

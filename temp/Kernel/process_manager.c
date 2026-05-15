@@ -101,7 +101,13 @@ void *create_stack(void *stack_top, void *entry_point, char **args, void *wrappe
 
 
 void process_wrapper(int (*entry_point)(int, char **), char **args) {
-    ((int (*)(int, char **))entry_point)(1, args);
+    int argc = 0;
+    if (args) {
+        while (args[argc] != NULL) {
+            argc++;
+        }
+    }
+    ((int (*)(int, char **))entry_point)(argc, args);
     exit_process();
 }
 

@@ -33,19 +33,34 @@ uint64_t schedule(uint64_t current_rsp) {
 }
 
 PCB *pick_next_process() {
-    PCBNode *curr = get_active_process_list();
-    if (!curr) return NULL;
+    PCBNode *head = get_active_process_list();
+    if (!head) return NULL;
 
     PCB *best = NULL;
     int max_priority = -1;
-    PCBNode *start = curr;
+
+    PCB *current = get_current_process();
+    PCBNode *current_node = NULL;
+    PCBNode *curr = head;
+
+    do {
+        if (curr->pcb == current) {
+            current_node = curr;
+            break;
+        }
+        curr = curr->next ? curr->next : head;
+    } while (curr != head);
+
+    PCBNode *start = current_node && current_node->next ? current_node->next : head;
+    curr = start;
+
     do {
         if (curr->pcb->state == READY && curr->pcb->priority > max_priority) {
             best = curr->pcb;
             max_priority = curr->pcb->priority;
 
         }
-        curr = curr->next ? curr->next : get_active_process_list();
+        curr = curr->next ? curr->next : head;
 
     } while (curr != start);
 

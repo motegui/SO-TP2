@@ -12,10 +12,11 @@
 #include <date_time.h>
 #include <process_userland.h>
 
-#define COMMANDS_QUANTITY 25
+#define COMMANDS_QUANTITY 26
 char * test_mm_args[3];
 
 extern int loop_a_main(int argc, char **argv);
+int mvar(int argc, char **argv);
 
 static int last_fg_pid = -1;
 
@@ -59,40 +60,42 @@ int wait(int pid, int piped, int background) {
 
 static char *commandsNames[] = {
     "help", "time", "date", "registers", "fillregs", "div0", "invalidop", "pong", "clear",
-    "mem", "ps", "kill", "nice", "block", "unblock", "cat","wc", "filter", "testmm", "testsync", "testprio", "testpro", "phylos", "loop", "yield"
+    "mem", "ps", "kill", "nice", "block", "unblock", "cat","wc", "filter", "testmm", "testsync", "testprio", "testpro", "phylos", "mvar", "loop", "yield"
 };
 
 static char *commands[] = {
-    "\thelp: gives you a list of all existent commands.\n",
-    "\ttime: prints the time of the OS.\n",
-    "\tdate: prints the date of the OS.\n",
-    "\tregisters: print the state of the registers at the time you screenshot them with CTRL key.\n",
-    "\tfillregs: fill the registers with stepped values for testing.\n",
-    "\tdiv0: divide by zero to trigger exception\n",
-    "\tinvalidop: trigger invalid operation code exception\n",
-    "\tpong: go to play the \"pong\" game.\n",
-    "\tclear: clears the OS screen.\n",
-    "\tmem: shows used and free memory.\n",
-    "\tps: lists all active processes.\n",
-    "\tkill <pid>: kills the process with the given pid.\n",
-    "\tnice <pid> <priority>: changes the priority of the process.\n",
-    "\tblock <pid>: blocks the process with the given pid.\n",
-    "\tunblock <pid>: unblocks the process with the given pid.\n",
-	"\tcat: prints stdin as it is received.\n",
-    "\tfilter: prints stdin without vowels.\n",
-    "\twc: counts the number of lines from stdin.\n",
-	"\ttestmm: test memory manager.\n",
-	"\ttestsync: test synchronization (semaphores).\n",
-    "\ttestprio: test process priorities.\n",
-    "\ttestpro: test process creation, kill, block, unblock.\n",
-    "\tphylos: dining philosophers problem simulation.\n",
-    "\tloop: runs a simple loop process.\n",
-    "\tyield: yields the CPU to other processes.\n",
+    "help: gives you a list of all existent commands.\n",
+    "time: prints the time of the OS.\n",
+    "date: prints the date of the OS.\n",
+    "registers: print the state of the registers at the time you screenshot them with CTRL key.\n",
+    "fillregs: fill the registers with stepped values for testing.\n",
+    "div0: divide by zero to trigger exception\n",
+    "invalidop: trigger invalid operation code exception\n",
+    "pong: go to play the \"pong\" game.\n",
+    "clear: clears the OS screen.\n",
+    "mem: shows used and free memory.\n",
+    "ps: lists all active processes.\n",
+    "kill <pid>: kills the process with the given pid.\n",
+    "nice <pid> <priority>: changes the priority of the process.\n",
+    "block <pid>: blocks the process with the given pid.\n",
+    "unblock <pid>: unblocks the process with the given pid.\n",
+	"cat: prints stdin as it is received.\n",
+    "filter: prints stdin without vowels.\n",
+    "wc: counts the number of lines from stdin.\n",
+	"testmm: test memory manager.\n",
+	"testsync: test synchronization (semaphores).\n",
+    "testprio: test process priorities.\n",
+    "testpro: test process creation, kill, block, unblock.\n",
+    "phylos: dining philosophers problem simulation.\n",
+    "mvar <writers> <readers>: multiple readers/writers problem.\n",
+    "loop: runs a simple loop process.\n",
+    "yield: yields the CPU to other processes.\n",
 };
 char * loop_args[2] = {"loop", NULL};
 char * test_mm_args[3];
 char * test_pro_args[3];
 char * test_sync_args[4];
+
 void shell() {
 	printColor("Welcome to HomerOS. Type \"help\" for command list\n", ORANGE);
 	printfColor("Shell PID: %d\n", GREEN, sys_get_pid());
@@ -449,10 +452,26 @@ int analizeBuffer(char * buffer, int count, int piped, int * fds) {
 		return wait(pid, piped, background);
 	}
 
+	// MVAR
+	else if (commandMatch(buffer, "mvar", count)) {
+		char * args[4];
+		parse_command(args, buffer, 4);
+		if (args[1] != NULL) {
+			if (args[2] == NULL && !commandMatch(args[1], "stop", 4)) {
+				args[2] = args[1];
+				args[3] = NULL;
+			}
+			int pid = sys_create_process("mvar", 1, !background, &mvar, args);
+			return wait(pid, piped, background);
+		} else {
+			printColor("Usage: mvar <writers> [readers] | mvar stop\n", RED);
+			return -1;
+		}
+	}
+
 	// Default: command not found
 	else {
 		printColor("\nCommand not found. Type \"help\" for command list\n", RED);
 		return -1;
 	}
 }
-
