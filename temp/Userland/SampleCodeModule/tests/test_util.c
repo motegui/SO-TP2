@@ -18,14 +18,19 @@ int memcheck(void *addr, char val, uint32_t size) {
     return 1;
 }
 
-// Convierte string a entero (solo positivo)
+// Convierte string a entero (con signo opcional)
 int satoi(const char *str) {
     int res = 0;
+    int sign = 1;
+    if (*str == '-') {
+        sign = -1;
+        str++;
+    }
     while (*str >= '0' && *str <= '9') {
         res = res * 10 + (*str - '0');
         str++;
     }
-    return res;
+    return res * sign;
 }
 
 // Wrappers de malloc/free usando syscalls

@@ -67,5 +67,10 @@ PCB *pick_next_process() {
     return best;
 }
 int get_foreground_pid() {
-    return get_current_process()->pid;
+    int fg = get_foreground_process_pid();
+    if (fg > 0) {
+        return fg;
+    }
+    PCB *current = get_current_process();
+    return current ? current->pid : -1;
 }

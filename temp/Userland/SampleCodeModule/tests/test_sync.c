@@ -51,17 +51,18 @@ uint64_t my_process_inc(uint64_t argc, char *argv[]) {
             sys_sem_post(string_hash(SEM_ID));
     }
 
-    if (use_sem)
-        sys_sem_close(string_hash(SEM_ID));
-
     return 0;
 }
 
 uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
     uint64_t pids[2 * TOTAL_PAIR_PROCESSES];
 
-    if (argc != 2)
+    sys_write(1, "[testsync] start\n", 17);
+
+    if (argc != 2) {
+        sys_write(1, "test_sync: usage testsync <n> <use_sem>\n", 41);
         return -1;
+    }
 
     char *argvDec[] = {argv[0], "-1", argv[1], NULL};
     char *argvInc[] = {argv[0], "1", argv[1], NULL};
@@ -69,13 +70,22 @@ uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
     global = 0;
 
     for (uint64_t i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
-      pids[i] = sys_create_process("my_process_inc", 3, 1, (void *)my_process_inc, argvDec);
-      pids[i + TOTAL_PAIR_PROCESSES] = sys_create_process("my_process_inc", 3, 1, (void *)my_process_inc, argvInc);
+      pids[i] = sys_create_process("my_process_inc", 3, 0, (void *)my_process_inc, argvDec);
+      pids[i + TOTAL_PAIR_PROCESSES] = sys_create_process("my_process_inc", 3, 0, (void *)my_process_inc, argvInc);
+      if (pids[i] <= 0 || pids[i + TOTAL_PAIR_PROCESSES] <= 0) {
+        sys_write(1, "test_sync: ERROR creating process\n", 33);
+        return -1;
+      }
+      sys_yield();
     }
 
     for (uint64_t i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
         sys_wait_pid(pids[i]);
         sys_wait_pid(pids[i + TOTAL_PAIR_PROCESSES]);
+    }
+
+    if (satoi(argv[1]) != 0) {
+        sys_sem_close(string_hash(SEM_ID));
     }
 
     char buffer[64];

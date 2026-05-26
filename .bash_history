@@ -133,3 +133,28 @@ make clean && make
 make clean && make
 make clean && make
 make clean && make
+cd temp
+ls
+cd tmp
+make clean && make
+cd ..
+cd..
+ls
+cd root
+ls
+cd temp
+make clean && make
+./run.sh
+./run.sh serial
+cd root
+cd temp
+make clean && make
+./run.sh serial 
+make clean && make
+cd temp
+ls
+cd root
+cd temp
+make clean && make
+make clean && make
+./run.sh serial

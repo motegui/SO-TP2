@@ -40,22 +40,28 @@ int strtoi(char * buffer, int * i) {
 
 void intToStr(int num, char* str) {
     int i = 0;
+    if (num == 0) {
+        str[0] = '0';
+        str[1] = 0;
+        return;
+    }
     if (num < 0) {
         str[i] = '-';
         i++;
         num = -num;
     }
     int aux = num;
+    int digits = 0;
     while (aux > 0) {
         aux /= 10;
-        i++;
+        digits++;
     }
-    str[i] = 0;
-    i--;
+    str[digits + i] = 0;
+    int j = digits + i - 1;
     while (num > 0) {
-        str[i] = num % 10 + '0';
+        str[j] = (num % 10) + '0';
         num /= 10;
-        i--;
+        j--;
     }
 }
 

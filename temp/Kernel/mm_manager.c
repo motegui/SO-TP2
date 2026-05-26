@@ -92,12 +92,18 @@ void getMemoryStatus(MemoryManagerADT const restrict memoryManager, size_t *used
 	*used = 0;
 	*free = 0;
 
-	Block *curr = memoryManager->blockList;
+	MemoryManagerCDT *mm = (MemoryManagerCDT *) memoryManager;
+	if (mm->nextAddress < mm->endAddress) {
+		*free += (size_t) (mm->endAddress - mm->nextAddress);
+	}
+
+	Block *curr = mm->blockList;
 	while (curr != NULL) {
-		if (curr->is_free)
+		if (curr->is_free) {
 			*free += curr->size;
-		else
-			*used += curr->size;
+		} else {
+			*used += curr->size + sizeof(Block);
+		}
 		curr = curr->next;
 	}
 }
@@ -105,7 +111,11 @@ void getMemoryStatus(MemoryManagerADT const restrict memoryManager, size_t *used
 void getMemoryData(memoryData *data) {
     size_t used, free;
     getMemoryStatus(globalMemoryManager, &used, &free);
-    data->used = used;
-    data->free = free;
     data->total = total_memory;
+    data->used = used;
+    if (used + free > data->total) {
+        data->free = (data->total > used) ? (data->total - used) : 0;
+    } else {
+        data->free = free;
+    }
 }

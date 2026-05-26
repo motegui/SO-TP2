@@ -75,6 +75,10 @@ int pipe_read(int id, char *dest, unsigned int count) {
     Pipe *pipe = &pipe_table[id];
 
     for (unsigned int i = 0; i < count; i++) {
+        if (pipe->eof && pipe->size == 0) {
+            return i;
+        }
+
         sem_wait(pipe->filled_slots);
 
         if (pipe->size == 0 && pipe->eof) {
@@ -91,12 +95,30 @@ int pipe_read(int id, char *dest, unsigned int count) {
     return count;
 }
 
+void pipe_shutdown_write(int id) {
+    if (id < 0 || id >= MAX_PIPES || !pipe_table[id].open) {
+        return;
+    }
+
+    Pipe *pipe = &pipe_table[id];
+    pipe->eof = 1;
+
+    for (int i = 0; i < 64; i++) {
+        sem_post(pipe->filled_slots);
+    }
+}
+
 void pipe_close(int id) {
     if (id < 0 || id >= MAX_PIPES || !pipe_table[id].open) {
         return;
     }
 
     Pipe *pipe = &pipe_table[id];
+    pipe->eof = 1;
+
+    for (int i = 0; i < 64; i++) {
+        sem_post(pipe->filled_slots);
+    }
 
     sem_close(pipe->filled_slots);
     sem_close(pipe->empty_slots);

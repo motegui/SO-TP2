@@ -4,7 +4,11 @@
 
 int cat(char ** args);
 int wc(char **args);
-int filter(char **args);
+int filter(int argc, char **argv);
+
+int mvar(int argc, char **argv);
+int mvar_is_running(void);
+void mvar_force_stop(void);
 
 //para phylo.c
 void philosopher();

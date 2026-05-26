@@ -12,8 +12,59 @@ extern MemoryManagerADT globalMemoryManager;
 static PCBNode *active_processes = NULL;
 static PCB *current_process = NULL;
 static int next_pid = 1;
+static int pending_stdin_pipe = -1;
+static int pending_stdout_pipe = -1;
+static int foreground_process_pid = -1;
 
+void set_pending_process_io(int stdin_pipe, int stdout_pipe) {
+    pending_stdin_pipe = stdin_pipe;
+    pending_stdout_pipe = stdout_pipe;
+}
 
+int get_foreground_process_pid() {
+    return foreground_process_pid;
+}
+
+char *strdup_kernel(const char *src);
+
+static char **copy_args(char **args) {
+    if (!args) {
+        return NULL;
+    }
+
+    int argc = 0;
+    while (args[argc] != NULL) {
+        argc++;
+    }
+
+    char **copy = allocMemory(globalMemoryManager, (argc + 1) * sizeof(char *));
+    if (!copy) {
+        return NULL;
+    }
+
+    for (int i = 0; i < argc; i++) {
+        copy[i] = strdup_kernel(args[i]);
+        if (!copy[i]) {
+            for (int j = 0; j < i; j++) {
+                freeMemory(globalMemoryManager, copy[j]);
+            }
+            freeMemory(globalMemoryManager, copy);
+            return NULL;
+        }
+    }
+    copy[argc] = NULL;
+    return copy;
+}
+
+static void free_args(char **args) {
+    if (!args) {
+        return;
+    }
+    for (int i = 0; args[i] != NULL; i++) {
+        freeMemory(globalMemoryManager, args[i]);
+    }
+    freeMemory(globalMemoryManager, args);
+}
 
 PCB *create_process(const char *name, int parent_pid, int priority, bool foreground, void *entry_point, char **args){
     PCB *pcb = allocMemory(globalMemoryManager, sizeof(PCB));
@@ -26,6 +77,14 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     pcb->priority = priority;
     pcb->foreground = foreground;
     pcb->ticks = 0;
+    pcb->stdin_pipe = pending_stdin_pipe;
+    pcb->stdout_pipe = pending_stdout_pipe;
+    pending_stdin_pipe = -1;
+    pending_stdout_pipe = -1;
+
+    if (foreground) {
+        foreground_process_pid = pcb->pid;
+    }
 
     // Asignar stack
     pcb->stack_base = allocMemory(globalMemoryManager, 8192);
@@ -38,7 +97,15 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     uint64_t *stack_top = (uint64_t *)((uint64_t)pcb->stack_base + 8192);
     stack_top = (uint64_t *)((uint64_t)stack_top & ~0xF);
 
-    pcb->stack_pointer = create_stack(stack_top, entry_point, args, &process_wrapper);
+    pcb->argv = copy_args(args);
+    if (args && !pcb->argv) {
+        freeMemory(globalMemoryManager, pcb->stack_base);
+        freeMemory(globalMemoryManager, pcb->name);
+        freeMemory(globalMemoryManager, pcb);
+        return NULL;
+    }
+
+    pcb->stack_pointer = create_stack(stack_top, entry_point, pcb->argv, &process_wrapper);
 
     pcb->state = READY;
 
@@ -184,7 +251,18 @@ void print_active_processes() {
 
 void destroy_process(PCB *pcb) {
     if (!pcb) return;
+
+    if (foreground_process_pid == pcb->pid) {
+        foreground_process_pid = -1;
+    }
+
+    if (pcb->sem_id != NULL) {
+        sem_close((sem_t)pcb->sem_id);
+        pcb->sem_id = NULL;
+    }
+
     pcb->state = TERMINATED;
+    free_args(pcb->argv);
     freeMemory(globalMemoryManager, pcb->name);
     freeMemory(globalMemoryManager, pcb->stack_base);
     freeMemory(globalMemoryManager, pcb);
@@ -303,6 +381,10 @@ void exit_process() {
         return;
     }
 
+    if (foreground_process_pid == current->pid) {
+        foreground_process_pid = -1;
+    }
+
     current->state = ZOMBIE;
     sem_post((sem_t)current->sem_id);
 
@@ -314,6 +396,10 @@ void kill_process(int pid) {
     if (!target) {
         ncPrint("Error: Proceso no encontrado.\n");
         return;
+    }
+
+    if (foreground_process_pid == target->pid) {
+        foreground_process_pid = -1;
     }
 
     if (target->state == ZOMBIE || get_process_by_pid(target->parent_pid) == NULL) {

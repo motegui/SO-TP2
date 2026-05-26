@@ -1,5 +1,6 @@
 #include <usyscalls.h>
 #include <userio.h>
+#include <programs.h>
 #include <stdarg.h>
 #include <colors.h>
 #include <uStrings.h>
@@ -28,9 +29,12 @@ void printColorChar(char c, uint64_t color) {
 }
 
 char get_char() {
-    char c[] = {0};
-    sys_read(0, c, 1);
-    return c[0];
+    char c = 0;
+    int64_t n = (int64_t) sys_read(0, &c, 1);
+    if (n <= 0) {
+        return (char) EOF;
+    }
+    return c;
 }
 char get_char_no_block() {
 	char c[] = {0};

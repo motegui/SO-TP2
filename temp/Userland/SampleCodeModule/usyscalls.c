@@ -63,6 +63,14 @@ uint64_t sys_draw_image(const unsigned long * image, int width, int height) {
     return sys_call((uint64_t) 13, (uint64_t) image, (uint64_t) width, (uint64_t) height, (uint64_t) 0, (uint64_t) 0);
 }
 
+void sys_set_child_io(int stdin_pipe, int stdout_pipe) {
+    sys_call(40, (uint64_t) stdin_pipe, (uint64_t) stdout_pipe, 0, 0, 0);
+}
+
+void sys_pipe_shutdown_write(int pipe_id) {
+    sys_call(41, (uint64_t) pipe_id, 0, 0, 0, 0);
+}
+
 uint64_t sys_create_process(char *name, int priority, int foreground, void *entry_point, char **args) {
     
     uint64_t pid = sys_call(14, (uint64_t)name, (uint64_t)priority, (uint64_t)foreground,

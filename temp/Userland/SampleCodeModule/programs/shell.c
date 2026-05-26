@@ -16,7 +16,6 @@
 char * test_mm_args[3];
 
 extern int loop_a_main(int argc, char **argv);
-int mvar(int argc, char **argv);
 
 static int last_fg_pid = -1;
 
@@ -47,11 +46,18 @@ int sscanf(const char *str, const char *format, int *a, int *b) {
 }
 int wait(int pid, int piped, int background) {
 	if (!piped && !background) {
-		last_fg_pid = pid;  // Guardar PID del proceso foreground
-		sys_wait_pid(pid);
-		last_fg_pid = -1;   // Limpiar después de que termine
+		if (pid <= 0) {
+			printColor("Error: no se pudo crear el proceso\n", RED);
+			last_fg_pid = -1;
+			return -1;
+		}
+		last_fg_pid = pid;
+		if (sys_wait_pid(pid) < 0) {
+			printColor("Error: wait_pid fallo\n", RED);
+		}
+		last_fg_pid = -1;
 	} else {
-		last_fg_pid = -1;   // No es foreground, limpiar
+		last_fg_pid = -1;
 	}
 	return pid;
 }
@@ -113,8 +119,11 @@ void shell() {
 			printColor("\n[Shell] EOF recibido. Cerrando shell...\n", RED);
 			return;
 		} else if (c == 3) { // Ctrl+C
-			// Matar proceso foreground (si hay uno)
-			if (last_fg_pid > 0) {
+			if (mvar_is_running()) {
+				mvar_force_stop();
+				printColor("\n[Shell] Ctrl+C: mvar detenido\n", RED);
+				last_fg_pid = -1;
+			} else if (last_fg_pid > 0) {
 				printColor("\n[Shell] Ctrl+C: Matando proceso foreground (PID: ", RED);
 				printfColor("%d", RED, last_fg_pid);
 				printColor(")\n", RED);
@@ -239,6 +248,7 @@ void analyze_piped_command(char *buffer, int count) {
 
     if (pid1 > 0 && pid2 > 0) {
         sys_wait_pid(pid1);
+        sys_pipe_shutdown_write(pipe_fd);
         sys_wait_pid(pid2);
     }
 
@@ -250,6 +260,15 @@ void print_help(){
 	for(int i=0; i<COMMANDS_QUANTITY; i++){
 		printColor(commands[i], YELLOW);
 	}
+	printColor("\n--- Tests de la catedra ---\n", GREEN);
+	printColor("testmm <bytes>: memory manager (ej: testmm 102400)\n", YELLOW);
+	printColor("testpro <max_procs>: procesos (ej: testpro 5)\n", YELLOW);
+	printColor("testsync <n> <use_sem>: sync (ej: testsync 1000 1)\n", YELLOW);
+	printColor("testprio: prioridades (sin parametros)\n", YELLOW);
+	printColor("\n--- Uso del shell ---\n", GREEN);
+	printColor("Pipe: cmd1 | cmd2   (ej: cat | wc)\n", YELLOW);
+	printColor("Background: comando &\n", YELLOW);
+	printColor("EOF: Ctrl+D (Control, no Command)   Ctrl+C: matar foreground\n", YELLOW);
 }
 
 
@@ -275,6 +294,13 @@ int analizeBuffer(char * buffer, int count, int piped, int * fds) {
 		return 0;
 	}
 
+	if (fds != NULL) {
+		int in = fds[0] == 0 ? -1 : fds[0];
+		int out = fds[1] == 1 ? -1 : fds[1];
+		sys_set_child_io(in, out);
+	} else {
+		sys_set_child_io(-1, -1);
+	}
 
 	int background = isBackground(buffer);
 
@@ -413,7 +439,7 @@ int analizeBuffer(char * buffer, int count, int piped, int * fds) {
 	// TESTSYNC
 	else if (commandMatch(buffer, "testsync", count)) {
 		parse_command(test_sync_args, buffer, 4);
-		int pid = sys_create_process("testsync", 1, !background, &test_sync, test_sync_args);
+		int pid = sys_create_process("testsync", 1, !background, &test_sync, test_sync_args + 1);
 		return wait(pid, piped, background);
 	}
 
@@ -461,8 +487,12 @@ int analizeBuffer(char * buffer, int count, int piped, int * fds) {
 				args[2] = args[1];
 				args[3] = NULL;
 			}
-			int pid = sys_create_process("mvar", 1, !background, &mvar, args);
-			return wait(pid, piped, background);
+			int pid = sys_create_process("mvar", 0, !background, &mvar, args);
+			int ret = wait(pid, piped, background);
+			if (mvar_is_running()) {
+				mvar_force_stop();
+			}
+			return ret;
 		} else {
 			printColor("Usage: mvar <writers> [readers] | mvar stop\n", RED);
 			return -1;

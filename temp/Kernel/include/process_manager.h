@@ -30,8 +30,11 @@ typedef struct PCB {
     int priority;
     bool foreground;
     int ticks;
+    int stdin_pipe;
+    int stdout_pipe;
     void *stack_base;
     void *stack_pointer;
+    char **argv;
     struct Semaphore *sem_id;
 } PCB;
 
@@ -51,6 +54,9 @@ typedef struct processInfo {
 	int status;
 	int exitCode;
 } processInfo;
+
+void set_pending_process_io(int stdin_pipe, int stdout_pipe);
+int get_foreground_process_pid();
 
 PCB *create_process(const char *name, int parent_pid, int priority, bool foreground, void *entry_point, char **args);
 

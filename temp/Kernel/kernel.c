@@ -11,6 +11,7 @@
 #include <mm_manager.h>
 #include "process_manager.h"
 #include "interrupts.h"
+#include "pipes.h"
 
 #define MANAGER_STRUCT_SIZE  sizeof(struct MemoryManagerCDT)
 #define MANAGED_MEMORY_SIZE  0x100000 
@@ -68,6 +69,8 @@ int main()
 		(void*)0x801000, // Memory for the managed memory
 		MANAGED_MEMORY_SIZE
 	);
+
+	init_pipes();
 
 	char *shellArgs[] = { "sh", NULL };
 	

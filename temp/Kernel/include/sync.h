@@ -26,6 +26,11 @@ sem_t sem_create(int initValue);
 int sem_close(sem_t sem);
 int sem_wait(sem_t sem);
 int sem_post(sem_t sem);
+sem_t sem_open_named(uint64_t id, int initValue);
+sem_t sem_get_named(uint64_t id);
+int sem_wait_named(uint64_t id);
+int sem_post_named(uint64_t id);
+int sem_close_named(uint64_t id);
 bool is_blocked_by_semaphore(int pid);
 
 int enter_region(uint8_t *lock);

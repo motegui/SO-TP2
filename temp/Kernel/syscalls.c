@@ -16,149 +16,162 @@ extern const uint64_t registers[17];
 
 static uint64_t sys_mem_data();
 
-void syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5) {
+uint64_t syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5) {
     switch(id) {
         case 0:
-            sys_read(arg0, arg1, arg2, arg3);
-            break;
+            return (uint64_t) sys_read(arg0, arg1, arg2, arg3);
         case 1:
             sys_write(arg0, arg1, arg2);
-            break;
+            return 0;
         case 2:
             sys_write_color(arg0, arg1, arg2, arg3);
-            break;
+            return 0;
         case 3:
             sys_get_registers(arg0);
-            break;
+            return 0;
        	case 4:
-			sys_get_time(arg0);
-			return;
+			return (uint64_t) sys_get_time(arg0);
 		case 5:
-			sys_get_date(arg0);
-			return;
+			return (uint64_t) sys_get_date(arg0);
         case 6:
             sys_clear_screen();
-            break;
+            return 0;
         case 7:
             sys_draw_rect(arg0, arg1, arg2, arg3, arg4);
-            break;
+            return 0;
         case 8:
             sys_play_sound(arg0, arg1, arg2);
-            break;
+            return 0;
         case 9:
             sys_get_screensize(arg0, arg1);
-            break;
+            return 0;
         case 10:
             sys_toggle_cursor();
-            break;
+            return 0;
         case 11:
             sys_get_ticks(arg0);
-            break;
+            return 0;
         case 12:
             sys_write_place(arg0, arg1, arg2, arg3, arg4);
-            break;
+            return 0;
         case 13:
             sys_draw_image(arg0, arg1, arg2);
-            break;
+            return 0;
         case 14:
-            sys_create_process(arg0, arg1, arg2, arg3,arg4);
-            return;
+            return (uint64_t) sys_create_process(arg0, arg1, arg2, arg3, arg4);
         case 15:
             sys_exit_process();
-            break;
-        case 16:
-             sys_get_pid();
-             break;
+            return 0;
+        case 16: {
+             PCB *current = get_current_process();
+             return current ? (uint64_t) current->pid : 0;
+        }
         case 17:
             sys_list_processes((char *) arg0, (uint64_t) arg1);
-            break;
+            return 0;
         case 18:
             sys_kill_process((int) arg0);
-            break;
+            return 0;
         case 19:
             sys_nice_process(arg0, arg1);
+            return 0;
         case 20:
             sys_block_process(arg0);
-            break;
+            return 0;
         case 21:
             sys_unblock_process(arg0);
-            break;
+            return 0;
         case 22:
             sys_yield();
-            break;
+            return 0;
         case 23:
-            sys_wait_for_children(); 
-            break;
+            sys_wait_for_children();
+            return 0;
        case 24:
-            sys_malloc(arg0);
-            return;
+            return sys_malloc(arg0);
         case 25:
-            sys_free(arg0);   
-            return;
+            return (uint64_t) sys_free(arg0);
         case 26:
             sys_get_mem_status((size_t *) arg0, (size_t *) arg1);
-            break;
+            return 0;
         case 27:
-            sys_sem_create(arg0, arg1);
-            return;
+            return (uint64_t) sys_sem_create(arg0, arg1);
         case 29:
-            sys_sem_close(arg0);
-            return;
+            return (uint64_t) sys_sem_close(arg0);
         case 30:
-            sys_sem_wait(arg0);
-            return;
+            return (uint64_t) sys_sem_wait(arg0);
         case 31:
-            sys_sem_post(arg0);
-            return;
+            return (uint64_t) sys_sem_post(arg0);
         case 32:
-            sys_create_named_pipe((char*) (arg0));
-            return;
+            return sys_create_named_pipe((char*) (arg0));
         case 33:
-            sys_read_pipe((int) arg0, (char *) arg1, (int) arg2);
-            return;
+            return sys_read_pipe((int) arg0, (char *) arg1, (int) arg2);
         case 34:
-            sys_write_pipe((int) arg0, (char*)arg1, (int)arg2);
-            return;
+            return sys_write_pipe((int) arg0, (char*)arg1, (int)arg2);
         case 35:
-            sys_wait_pid(arg0);
-            return;
+            return (uint64_t) sys_wait_pid(arg0);
         case 36:
-            sys_close_pipe((int) arg0);
-            return;
+            return sys_close_pipe((int) arg0);
         case 37:
             *((uint64_t*)arg0) = sys_mem_data();
-            return;
+            return 0;
         case 38:
-            sys_processes_info();
-            return;
+            return sys_processes_info();
         case 39:
-            sys_free_processes_info(arg0);
-            return;
-        }
-
-
+            return (uint64_t) sys_free_processes_info(arg0);
+        case 40:
+            set_pending_process_io((int) arg0, (int) arg1);
+            return 0;
+        case 41:
+            pipe_shutdown_write((int) arg0);
+            return 0;
+        default:
+            return 0;
+    }
 }
 
 
 int64_t sys_read(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t shouldNotBlock) {
-    if (fd != STDIN || length == 0)
+    if (fd != STDIN || length == 0) {
         return -1;
+    }
 
+    PCB *current = get_current_process();
     char *buff = (char *)buffer;
     int i = 0;
 
-    while (i < length) {
+    if (current != NULL && current->stdin_pipe >= 0) {
+        return pipe_read(current->stdin_pipe, buff, (unsigned int) length);
+    }
+
+    while (i < (int) length) {
+        if (shouldNotBlock && is_keyboard_buffer_empty()) {
+            return i;
+        }
+
         while (is_keyboard_buffer_empty()) {
             _hlt();
         }
 
-        buff[i++] = dequeue_keyboard_char();
+        char c = dequeue_keyboard_char();
+        if ((signed char) c == -1) {
+            return i;
+        }
+
+        buff[i++] = c;
     }
 
     return i;
 }
 
 static void sys_write(uint64_t fd, uint64_t buffer, uint64_t length) {
+    PCB *current = get_current_process();
+
+    if (fd == STDOUT && current != NULL && current->stdout_pipe >= 0) {
+        pipe_write(current->stdout_pipe, (char *) buffer, (unsigned int) length);
+        return;
+    }
+
     if (fd == STDOUT) {
         print_stringN((char *) buffer, length);
     } else if (fd == STDERR) {
@@ -226,13 +239,11 @@ static void sys_get_screensize(uint64_t width, uint64_t height) {
 }
 
 static int64_t sys_create_process(uint64_t name, uint64_t priority, uint64_t foreground, uint64_t entry_point, uint64_t args) {
-    PCB *pcb = create_process((const char *)name, get_current_process()->pid, priority, foreground, (void *) entry_point, (char **)args);
+    PCB *parent = get_current_process();
+    int parent_pid = parent ? parent->pid : 0;
+    PCB *pcb = create_process((const char *)name, parent_pid, priority, foreground, (void *) entry_point, (char **)args);
     if (!pcb) return -1; 
     return pcb->pid;
-}
-
-static void sys_get_pid() {
-    get_pid();
 }
 
 static void sys_list_processes(char *buffer, uint64_t length) {
@@ -295,13 +306,12 @@ static void sys_get_mem_status(uint64_t *used, uint64_t *free) {
 }
 
 static int64_t sys_sem_create(uint64_t semName, uint64_t in_value){
-    (void)semName; // semName is unused in this implementation
-    return (int64_t) sem_create((int) in_value);
+    return sem_open_named(semName, (int) in_value) != NULL;
 }
 
 
 static int64_t sys_sem_close(uint64_t  semName) {
-    return (int64_t) sem_close((sem_t) semName);
+    return (int64_t) sem_close_named(semName);
 }
 
 static uint64_t sys_write_pipe(int pipe_id, char *buffer, int count){
@@ -319,11 +329,11 @@ static uint64_t sys_close_pipe(int pipe_id){
 
 // Add missing sys_* function implementations
 static int64_t sys_sem_wait(uint64_t sem_id) {
-    return sem_wait((sem_t)sem_id);
+    return sem_wait_named(sem_id);
 }
 
 static int64_t sys_sem_post(uint64_t sem_id) {
-    return sem_post((sem_t)sem_id);
+    return sem_post_named(sem_id);
 }
 
 static uint64_t sys_create_named_pipe(char *name) {

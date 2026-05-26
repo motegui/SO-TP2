@@ -31,5 +31,6 @@ int pipe_open(const char *name);
 int pipe_write(int id, const char *src, unsigned int count);
 int pipe_read(int id, char *dest, unsigned int count);
 void pipe_close(int id);
+void pipe_shutdown_write(int id);
 
 #endif

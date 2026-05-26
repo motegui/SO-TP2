@@ -36,6 +36,8 @@ uint64_t sys_write_place(unsigned int fd, const char* buffer, unsigned int size,
 
 uint64_t sys_draw_image(const unsigned long * image, int width, int height);
 
+void sys_set_child_io(int stdin_pipe, int stdout_pipe);
+void sys_pipe_shutdown_write(int pipe_id);
 uint64_t sys_create_process(char *name, int priority, int foreground, void *entry_point, char **args);
 
 void sys_exit_process();

@@ -5,28 +5,35 @@
 #include <programs.h>
 
 #define MAX_PROCESSES 20
+#define MVAR_EMPTY "mvar_empty"
+#define MVAR_FULL "mvar_full"
+#define MVAR_MUTEX "mvar_mtx"
 
 static int writer_pids[MAX_PROCESSES];
 static int reader_pids[MAX_PROCESSES];
 static char writer_id_args[MAX_PROCESSES][5];
-static char reader_id_args[MAX_PROCESSES][5];
-static char reader_total_args[MAX_PROCESSES][5];
 static char *writer_args[MAX_PROCESSES][3];
-static char *reader_args[MAX_PROCESSES][4];
+static char *reader_args[MAX_PROCESSES][2];
 
-// Semáfores para sincronización
-// filled_count: indica si la variable tiene un valor (0=vacía, 1=llena)
-// mutex: exclusión mutua para acceder a la variable
-static int64_t filled_count = -1;
-static int64_t mutex = -1;
+static uint64_t empty_sem = 0;
+static uint64_t full_sem = 0;
+static uint64_t mutex_sem = 0;
 
-// Variable compartida y su valor actual
-volatile static char shared_value = 0;
-volatile static bool has_value = false;
+static volatile char shared_value = 0;
+static volatile int mvar_running = 0;
+
+static uint64_t string_hash(const char *str) {
+    uint64_t hash = 5381;
+    int c;
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c;
+    }
+    return hash;
+}
 
 static void sleep_cycles(int ms) {
-    for (volatile int i = 0; i < ms * 10000; i++) {
-        if ((i & 0x3FFF) == 0) {
+    for (volatile int i = 0; i < ms * 8000; i++) {
+        if ((i & 0x1FFF) == 0) {
             sys_yield();
         }
     }
@@ -59,7 +66,9 @@ static void int_to_str(int num, char *str) {
             tmp[i++] = '0' + (num % 10);
             num /= 10;
         }
-        for (int j = 0; j < i; j++) str[j] = tmp[i - j - 1];
+        for (int j = 0; j < i; j++) {
+            str[j] = tmp[i - j - 1];
+        }
     }
     str[i] = 0;
 }
@@ -67,65 +76,12 @@ static void int_to_str(int num, char *str) {
 static int get_random_sleep(int max_ms) {
     static uint32_t seed = 12345;
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return (seed % (max_ms + 1)) + 1;
+    return (seed % max_ms) + 5;
 }
 
-// Escritor: espera activa aleatoria, luego espera a que variable esté vacía, escribe único valor
-int writer_main(int argc, char **argv) {
-    if (argc < 2) return -1;
-    
-    int id = str_to_int(argv[1]);
-    char my_char = 'A' + (id % 26);  // A, B, C, etc.
-    
-    while (1) {
-        // Espera activa aleatoria
-        sleep_cycles(get_random_sleep(50));
-        
-        // Espera a que la variable esté vacía (semáforo filled_count = 0)
-        sys_sem_wait(mutex);
-        while (has_value) {
-            sys_sem_post(mutex);
-            sleep_cycles(10);
-            sys_sem_wait(mutex);
-        }
-        
-        // Escribe el valor
-        shared_value = my_char;
-        has_value = true;
-        sys_sem_post(mutex);
-        
-        // Post al semáforo filled_count para notificar a lectores
-        sys_sem_post(filled_count);
-    }
-    
-    return 0;
-}
+static void stop_mvar_processes(void) {
+    mvar_running = 0;
 
-// Lector: espera activa aleatoria, luego espera a que variable tenga valor, consume e imprime
-int reader_main(int argc, char **argv) {
-    if (argc < 3) return -1;
-    
-    while (1) {
-        // Espera activa aleatoria
-        sleep_cycles(get_random_sleep(50));
-        
-        // Espera a que la variable tenga un valor (filled_count > 0)
-        sys_sem_wait(filled_count);
-        
-        // Obtiene acceso a la variable
-        sys_sem_wait(mutex);
-        char value = shared_value;
-        has_value = false;
-        sys_sem_post(mutex);
-        
-        // Imprime el valor
-        sys_write(1, &value, 1);
-    }
-    
-    return 0;
-}
-
-static void stop_mvar_processes() {
     for (int i = 0; i < MAX_PROCESSES; i++) {
         if (writer_pids[i] > 0) {
             sys_kill_process(writer_pids[i]);
@@ -137,17 +93,85 @@ static void stop_mvar_processes() {
         }
     }
 
-    if (filled_count >= 0) {
-        sys_sem_close(filled_count);
-        filled_count = -1;
+    if (empty_sem != 0) {
+        sys_sem_close(empty_sem);
+        empty_sem = 0;
     }
-    if (mutex >= 0) {
-        sys_sem_close(mutex);
-        mutex = -1;
+    if (full_sem != 0) {
+        sys_sem_close(full_sem);
+        full_sem = 0;
+    }
+    if (mutex_sem != 0) {
+        sys_sem_close(mutex_sem);
+        mutex_sem = 0;
     }
 
     shared_value = 0;
-    has_value = false;
+}
+
+int mvar_is_running(void) {
+    return mvar_running;
+}
+
+void mvar_force_stop(void) {
+    stop_mvar_processes();
+}
+
+int writer_main(int argc, char **argv) {
+    if (argc < 2) {
+        return -1;
+    }
+
+    int id = str_to_int(argv[1]);
+    char my_char = 'A' + (id % 26);
+
+    while (mvar_running) {
+        sleep_cycles(get_random_sleep(40));
+
+        if (!mvar_running) {
+            break;
+        }
+
+        sys_sem_wait(empty_sem);
+        if (!mvar_running) {
+            sys_sem_post(empty_sem);
+            break;
+        }
+
+        sys_sem_wait(mutex_sem);
+        shared_value = my_char;
+        sys_sem_post(mutex_sem);
+        sys_sem_post(full_sem);
+    }
+
+    return 0;
+}
+
+int reader_main(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
+    while (mvar_running) {
+        sleep_cycles(get_random_sleep(40));
+
+        if (!mvar_running) {
+            break;
+        }
+
+        sys_sem_wait(full_sem);
+        if (!mvar_running) {
+            break;
+        }
+
+        sys_sem_wait(mutex_sem);
+        char value = shared_value;
+        sys_sem_post(mutex_sem);
+        sys_sem_post(empty_sem);
+
+        sys_write(1, &value, 1);
+    }
+
+    return 0;
 }
 
 int mvar(int argc, char **argv) {
@@ -161,10 +185,10 @@ int mvar(int argc, char **argv) {
         sys_write(1, "mvar stopped\n", 13);
         return 0;
     }
-    
+
     int num_writers_arg = str_to_int(argv[1]);
     int num_readers_arg = argc >= 3 ? str_to_int(argv[2]) : num_writers_arg;
-    
+
     if (num_writers_arg <= 0 || num_readers_arg <= 0) {
         sys_write(1, "Use positive process counts\n", 28);
         return -1;
@@ -176,36 +200,50 @@ int mvar(int argc, char **argv) {
     }
 
     stop_mvar_processes();
-    
-    // Crear semáforos usando handles retornados
-    filled_count = sys_sem_create(0, 0);  // Inicialmente vacía
-    mutex = sys_sem_create(0, 1);          // Mutex inicialmente liberado
 
-    if (filled_count < 0 || mutex < 0) {
+    empty_sem = string_hash(MVAR_EMPTY);
+    full_sem = string_hash(MVAR_FULL);
+    mutex_sem = string_hash(MVAR_MUTEX);
+
+    if (!sys_sem_create(empty_sem, 1) || !sys_sem_create(full_sem, 0) ||
+        !sys_sem_create(mutex_sem, 1)) {
         sys_write(1, "Could not create semaphores\n", 28);
+        stop_mvar_processes();
         return -1;
     }
-    
-    // Crear escritores en background
+
+    mvar_running = 1;
+
     for (int i = 0; i < num_writers_arg; i++) {
         int_to_str(i, writer_id_args[i]);
         writer_args[i][0] = "writer";
         writer_args[i][1] = writer_id_args[i];
         writer_args[i][2] = NULL;
-        writer_pids[i] = sys_create_process("writer", 1, 0, (void *)writer_main, writer_args[i]);
+        writer_pids[i] = sys_create_process("writer", 1, 0, (void *) writer_main, writer_args[i]);
+        if (writer_pids[i] <= 0) {
+            stop_mvar_processes();
+            sys_write(1, "Could not create writer\n", 24);
+            return -1;
+        }
     }
-    
-    // Crear lectores en background
+
     for (int i = 0; i < num_readers_arg; i++) {
-        int_to_str(i, reader_id_args[i]);
-        int_to_str(num_readers_arg, reader_total_args[i]);
         reader_args[i][0] = "reader";
-        reader_args[i][1] = reader_id_args[i];
-        reader_args[i][2] = reader_total_args[i];
-        reader_args[i][3] = NULL;
-        reader_pids[i] = sys_create_process("reader", 1, 0, (void *)reader_main, reader_args[i]);
+        reader_args[i][1] = NULL;
+        reader_pids[i] = sys_create_process("reader", 1, 0, (void *) reader_main, reader_args[i]);
+        if (reader_pids[i] <= 0) {
+            stop_mvar_processes();
+            sys_write(1, "Could not create reader\n", 24);
+            return -1;
+        }
     }
-    
-    // El proceso principal termina inmediatamente
+
+    sys_write(1, "\nmvar: A/B en pantalla. Ctrl+C para detener.\n", 44);
+    sys_nice_process(sys_get_pid(), 0);
+
+    while (mvar_running) {
+        sys_yield();
+    }
+
     return 0;
 }

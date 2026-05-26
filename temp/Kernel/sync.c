@@ -5,6 +5,14 @@
 
 static Semaphore semaphores[MAX_SEMAPHORES];
 
+typedef struct {
+    uint64_t id;
+    sem_t sem;
+    int in_use;
+} NamedSemaphore;
+
+static NamedSemaphore named_sems[MAX_SEMAPHORES];
+
 static int get_free_slot() {
     for (int i = 0; i < MAX_SEMAPHORES; i++) {
         if (!semaphores[i].in_use)
@@ -37,22 +45,46 @@ int sem_close(sem_t sem) {
     return 0;
 }
 
-int sem_wait(sem_t sem) {
-    if (sem == NULL || !sem->in_use)
-        return -1;
+static int queue_contains_pid(Queue *q, int pid) {
+    QueueNode *curr = q->front;
+    while (curr) {
+        if (curr->pid == pid) {
+            return 1;
+        }
+        curr = curr->next;
+    }
+    return 0;
+}
 
-    enter_region(&sem->lock);
-    if (sem->value > 0) {
-        sem->value--;
-        leave_region(&sem->lock);
-        return 0;
+int sem_wait(sem_t sem) {
+    if (sem == NULL || !sem->in_use) {
+        return -1;
     }
 
-    int pid = get_current_process()->pid;
-    queue_enqueue(&sem->blocked_queue, pid);
-    leave_region(&sem->lock);
-    __asm__ volatile("int $0x20");
-    return 0;
+    while (1) {
+        enter_region(&sem->lock);
+        if (sem->value > 0) {
+            sem->value--;
+            leave_region(&sem->lock);
+            return 0;
+        }
+
+        int pid = get_current_process()->pid;
+        queue_enqueue(&sem->blocked_queue, pid);
+        leave_region(&sem->lock);
+        __asm__ volatile("int $0x20");
+
+        if (sem == NULL || !sem->in_use) {
+            return -1;
+        }
+
+        enter_region(&sem->lock);
+        int still_waiting = queue_contains_pid(&sem->blocked_queue, pid);
+        leave_region(&sem->lock);
+        if (!still_waiting) {
+            return 0;
+        }
+    }
 }
 
 
@@ -72,6 +104,67 @@ int sem_post(sem_t sem) {
     sem->value++;
     leave_region(&sem->lock);
     return 0;
+}
+
+sem_t sem_open_named(uint64_t id, int initValue) {
+    sem_t existing = sem_get_named(id);
+    if (existing != NULL) {
+        return existing;
+    }
+
+    sem_t sem = sem_create(initValue);
+    if (sem == NULL) {
+        return NULL;
+    }
+
+    for (int i = 0; i < MAX_SEMAPHORES; i++) {
+        if (!named_sems[i].in_use) {
+            named_sems[i].id = id;
+            named_sems[i].sem = sem;
+            named_sems[i].in_use = 1;
+            return sem;
+        }
+    }
+
+    sem_close(sem);
+    return NULL;
+}
+
+sem_t sem_get_named(uint64_t id) {
+    for (int i = 0; i < MAX_SEMAPHORES; i++) {
+        if (named_sems[i].in_use && named_sems[i].id == id) {
+            return named_sems[i].sem;
+        }
+    }
+    return NULL;
+}
+
+int sem_wait_named(uint64_t id) {
+    sem_t sem = sem_get_named(id);
+    if (sem == NULL) {
+        return -1;
+    }
+    return sem_wait(sem);
+}
+
+int sem_post_named(uint64_t id) {
+    sem_t sem = sem_get_named(id);
+    if (sem == NULL) {
+        return -1;
+    }
+    return sem_post(sem);
+}
+
+int sem_close_named(uint64_t id) {
+    for (int i = 0; i < MAX_SEMAPHORES; i++) {
+        if (named_sems[i].in_use && named_sems[i].id == id) {
+            sem_close(named_sems[i].sem);
+            named_sems[i].in_use = 0;
+            named_sems[i].sem = NULL;
+            return 0;
+        }
+    }
+    return -1;
 }
 
 bool is_blocked_by_semaphore(int pid) {
