@@ -8,7 +8,7 @@
 #include <mm_manager.h>
 #include <scheduler.h>
 
-#define MAX_SEMAPHORES 64
+#define MAX_SEMAPHORES 128
 #define SEM_NAME_LEN 32
 
 

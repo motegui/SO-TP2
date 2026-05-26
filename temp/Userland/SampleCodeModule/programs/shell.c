@@ -140,6 +140,7 @@ void shell() {
 		if (c == '\n') {
 			buffer[count] = 0;
 			if (count > 0) {
+				print_char('\n');
 				analizeBuffer(buffer, count, 0, defaultFds);
 			}
 			printColor("\nHomerOS: $> ", GREEN);

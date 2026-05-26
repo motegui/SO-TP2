@@ -12,13 +12,22 @@
 
 int64_t prio[TOTAL_PROCESSES] = {LOWEST, MEDIUM, HIGHEST};
 
-void test_prio() {
+static char prio_wait_arg[] = "100000";
+
+int64_t test_prio(uint64_t argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
     int64_t pids[TOTAL_PROCESSES];
-    char *argv[] = {0};
+    char *child_argv[] = {prio_wait_arg, NULL};
     uint64_t i;
 
-    for (i = 0; i < TOTAL_PROCESSES; i++)
-        pids[i] = sys_create_process("endless_loop_print", 0, 0, (void *)endless_loop_print, argv);
+    for (i = 0; i < TOTAL_PROCESSES; i++) {
+        pids[i] = sys_create_process("endless_loop_print", 0, 0, (void *) endless_loop_print, child_argv);
+        if (pids[i] <= 0) {
+            sys_write(1, "test_prio: ERROR creating process\n", 34);
+            return -1;
+        }
+    }
 
     bussy_wait(WAIT);
     sys_write(1, "\nCHANGING PRIORITIES...\n", 24);
@@ -45,6 +54,8 @@ void test_prio() {
     bussy_wait(WAIT);
     sys_write(1, "\nKILLING...\n", 12);
 
-    for (i = 0; i < TOTAL_PROCESSES; i++)
+    for (i = 0; i < TOTAL_PROCESSES; i++) {
         sys_kill_process(pids[i]);
+    }
+    return 0;
 }
