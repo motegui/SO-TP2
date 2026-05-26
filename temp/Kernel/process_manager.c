@@ -74,6 +74,10 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     pcb->parent_pid = parent_pid;
     pcb->state = NEW;
     pcb->name = strdup_kernel(name);
+    if (!pcb->name) {
+        freeMemory(globalMemoryManager, pcb);
+        return NULL;
+    }
     pcb->priority = priority;
     pcb->foreground = foreground;
     pcb->ticks = 0;
@@ -112,10 +116,16 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     char sem_name[16];
     snprintf(sem_name, sizeof(sem_name), "sem_%d", pcb->pid);
     pcb->sem_id = (struct Semaphore *)sem_create(0);
+    if (!pcb->sem_id) {
+        free_args(pcb->argv);
+        freeMemory(globalMemoryManager, pcb->stack_base);
+        freeMemory(globalMemoryManager, pcb->name);
+        freeMemory(globalMemoryManager, pcb);
+        return NULL;
+    }
 
     add_active_process(pcb);
 
-    
     return pcb;
     
 }

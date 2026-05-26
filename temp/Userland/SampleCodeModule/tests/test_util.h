@@ -25,6 +25,6 @@ void bussy_wait(uint64_t n);
 // Endless loop
 void endless_loop();
 // Endless loop con print de PID
-void endless_loop_print(uint64_t wait);
+uint64_t endless_loop_print(uint64_t argc, char *argv[]);
 void * mem_set(void * destination, int32_t c, uint64_t length);
 #endif // TEST_UTIL_H

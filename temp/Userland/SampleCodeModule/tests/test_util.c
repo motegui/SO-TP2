@@ -57,7 +57,15 @@ void endless_loop() {
 }
 
 // Endless loop con print de PID
-void endless_loop_print(uint64_t wait) {
+uint64_t endless_loop_print(uint64_t argc, char *argv[]) {
+    uint64_t wait = 100000;
+    if (argc > 0 && argv[0] != NULL) {
+        int64_t w = satoi(argv[0]);
+        if (w > 0) {
+            wait = (uint64_t) w;
+        }
+    }
+
     int64_t pid = sys_get_pid();
     char buffer[32];
     while (1) {
@@ -82,6 +90,7 @@ void endless_loop_print(uint64_t wait) {
         bussy_wait(wait);
         sys_yield();
     }
+    return 0;
 }
 void * mem_set(void * destination, int32_t c, uint64_t length) {
 	uint8_t chr = (uint8_t) c;
