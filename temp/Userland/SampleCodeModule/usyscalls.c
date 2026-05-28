@@ -71,6 +71,10 @@ void sys_pipe_shutdown_write(int pipe_id) {
     sys_call(41, (uint64_t) pipe_id, 0, 0, 0, 0);
 }
 
+uint64_t sys_get_io_flags() {
+    return sys_call(42, 0, 0, 0, 0, 0);
+}
+
 uint64_t sys_create_process(char *name, int priority, int foreground, void *entry_point, char **args) {
     
     uint64_t pid = sys_call(14, (uint64_t)name, (uint64_t)priority, (uint64_t)foreground,

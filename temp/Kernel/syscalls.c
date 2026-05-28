@@ -15,6 +15,7 @@
 extern const uint64_t registers[17];
 
 static uint64_t sys_mem_data();
+static uint64_t sys_get_io_flags();
 
 uint64_t syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5) {
     switch(id) {
@@ -125,6 +126,8 @@ uint64_t syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2
         case 41:
             pipe_shutdown_write((int) arg0);
             return 0;
+        case 42:
+            return sys_get_io_flags();
         default:
             return 0;
     }
@@ -386,4 +389,13 @@ static memoryData mem_info_buffer;
 static uint64_t sys_mem_data() {
     getMemoryData(&mem_info_buffer);
     return (uint64_t)&mem_info_buffer;
+}
+
+static uint64_t sys_get_io_flags() {
+    PCB *current = get_current_process();
+    if (!current) {
+        return 0;
+    }
+    return (current->stdin_pipe >= 0 ? 1 : 0) |
+           (current->stdout_pipe >= 0 ? 2 : 0);
 }
