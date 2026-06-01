@@ -110,12 +110,12 @@ void shell() {
 	int count = 0;
 	char buffer[1024] = {0};
 	char oldBuffer[1024] = {0};
-	int defaultFds[2] = {0, 1};
+	int defaultFds[2] = {-1, -1};
 
 	char flag = 0; // Used for up arrow
 	while(1) {
-		unsigned char c = get_char();
-		if (c == 4) { // Ctrl+D
+		int c = get_char();
+		if (c == EOF) {
 			printColor("\n[Shell] EOF recibido. Cerrando shell...\n", RED);
 			return;
 		} else if (c == 3) { // Ctrl+C
@@ -214,6 +214,21 @@ int has_pipe(char *buffer) {
     }
     return 0;
 }
+
+static char *trim_command(char *buffer) {
+    while (*buffer == ' ') {
+        buffer++;
+    }
+
+    int len = strlen(buffer);
+    while (len > 0 && buffer[len - 1] == ' ') {
+        buffer[len - 1] = 0;
+        len--;
+    }
+
+    return buffer;
+}
+
 void parse_command(char **argv, char *buffer, int max_args) {
 	int i = 0, j = 0;
 	while (buffer[i] != 0 && j < max_args) {
@@ -227,32 +242,51 @@ void parse_command(char **argv, char *buffer, int max_args) {
 }
 
 void analyze_piped_command(char *buffer, int count) {
-    char *commands[2];
+    (void) count;
+    char *commands[2] = {NULL, NULL};
     int i = 0;
     while (buffer[i] != 0) {
         if (buffer[i] == '|') {
             buffer[i] = 0;
-            commands[0] = buffer;
-            commands[1] = &buffer[i + 1];
+            commands[0] = trim_command(buffer);
+            commands[1] = trim_command(&buffer[i + 1]);
             break;
         }
         i++;
     }
 
-    int pipe_fd = sys_pipe_open("default_pipe");
+    if (commands[0] == NULL || commands[1] == NULL || commands[0][0] == 0 || commands[1][0] == 0) {
+        printColor("\nInvalid pipe command\n", RED);
+        return;
+    }
 
-    int fds1[2] = {0, pipe_fd};
-    int fds2[2] = {pipe_fd, 1};
+    int pipe_fd = sys_pipe_open("default_pipe");
+    if (pipe_fd < 0) {
+        printColor("\nError: no se pudo crear el pipe\n", RED);
+        return;
+    }
+
+    int fds1[2] = {-1, pipe_fd};
+    int fds2[2] = {pipe_fd, -1};
 
     int pid1 = analizeBuffer(commands[0], strlen(commands[0]), 1, fds1);
     int pid2 = analizeBuffer(commands[1], strlen(commands[1]), 1, fds2);
 
-    if (pid1 > 0 && pid2 > 0) {
-        sys_wait_pid(pid1);
-        sys_pipe_shutdown_write(pipe_fd);
-        sys_wait_pid(pid2);
+    if (pid1 <= 0 || pid2 <= 0) {
+        if (pid1 > 0) {
+            sys_kill_process(pid1);
+            sys_wait_pid(pid1);
+        }
+        if (pid2 > 0) {
+            sys_kill_process(pid2);
+            sys_wait_pid(pid2);
+        }
+        sys_close_pipe(pipe_fd);
+        return;
     }
 
+    sys_wait_pid(pid1);
+    sys_wait_pid(pid2);
     sys_close_pipe(pipe_fd);
 }
 
@@ -296,9 +330,7 @@ int analizeBuffer(char * buffer, int count, int piped, int * fds) {
 	}
 
 	if (fds != NULL) {
-		int in = fds[0] == 0 ? -1 : fds[0];
-		int out = fds[1] == 1 ? -1 : fds[1];
-		sys_set_child_io(in, out);
+		sys_set_child_io(fds[0], fds[1]);
 	} else {
 		sys_set_child_io(-1, -1);
 	}

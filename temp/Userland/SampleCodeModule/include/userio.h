@@ -18,7 +18,7 @@ void print_char(char c);
 
 void printColorChar(char c, uint64_t color);
 
-char get_char();
+int get_char();
 
 char get_char_no_block();
 

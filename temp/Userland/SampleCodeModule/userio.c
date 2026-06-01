@@ -28,13 +28,13 @@ void printColorChar(char c, uint64_t color) {
     sys_write_color(1, str, 1, color);
 }
 
-char get_char() {
+int get_char() {
     char c = 0;
     int64_t n = (int64_t) sys_read(0, &c, 1);
     if (n <= 0) {
-        return (char) EOF;
+        return EOF;
     }
-    return c;
+    return (unsigned char)c;
 }
 char get_char_no_block() {
 	char c[] = {0};

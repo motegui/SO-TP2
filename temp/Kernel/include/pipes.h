@@ -20,7 +20,11 @@ typedef struct {
     int size;
 
     int open;
-    uint8_t eof;
+    int readers;
+    int writers;
+    int reader_end_closed;
+    int writer_end_closed;
+    uint8_t lock;
 
     Semaphore *filled_slots;
     Semaphore *empty_slots;
@@ -28,9 +32,13 @@ typedef struct {
 
 void init_pipes();
 int pipe_open(const char *name);
+int pipe_attach_reader(int id);
+int pipe_attach_writer(int id);
 int pipe_write(int id, const char *src, unsigned int count);
 int pipe_read(int id, char *dest, unsigned int count);
 void pipe_close(int id);
+void pipe_close_reader(int id);
+void pipe_close_writer(int id);
 void pipe_shutdown_write(int id);
 
 #endif

@@ -7,6 +7,7 @@
 #include <print_utils.h>
 #include "sync.h"
 #include "lib.h"  // Include lib.h for the lib functions
+#include "pipes.h"
 
 extern MemoryManagerADT globalMemoryManager;
 static PCBNode *active_processes = NULL;
@@ -14,11 +15,28 @@ static PCB *current_process = NULL;
 static int next_pid = 1;
 static int pending_stdin_pipe = -1;
 static int pending_stdout_pipe = -1;
+static int pending_io_owner_pid = -1;
 static int foreground_process_pid = -1;
 
+static void close_process_io(PCB *pcb) {
+    if (!pcb) {
+        return;
+    }
+    if (pcb->stdin_pipe >= 0) {
+        pipe_close_reader(pcb->stdin_pipe);
+        pcb->stdin_pipe = -1;
+    }
+    if (pcb->stdout_pipe >= 0) {
+        pipe_close_writer(pcb->stdout_pipe);
+        pcb->stdout_pipe = -1;
+    }
+}
+
 void set_pending_process_io(int stdin_pipe, int stdout_pipe) {
+    PCB *current = get_current_process();
     pending_stdin_pipe = stdin_pipe;
     pending_stdout_pipe = stdout_pipe;
+    pending_io_owner_pid = current ? current->pid : 0;
 }
 
 int get_foreground_process_pid() {
@@ -81,10 +99,18 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     pcb->priority = priority;
     pcb->foreground = foreground;
     pcb->ticks = 0;
-    pcb->stdin_pipe = pending_stdin_pipe;
-    pcb->stdout_pipe = pending_stdout_pipe;
-    pending_stdin_pipe = -1;
-    pending_stdout_pipe = -1;
+    PCB *creator = get_current_process();
+    int creator_pid = creator ? creator->pid : 0;
+    if (pending_io_owner_pid == creator_pid) {
+        pcb->stdin_pipe = pending_stdin_pipe;
+        pcb->stdout_pipe = pending_stdout_pipe;
+        pending_stdin_pipe = -1;
+        pending_stdout_pipe = -1;
+        pending_io_owner_pid = -1;
+    } else {
+        pcb->stdin_pipe = -1;
+        pcb->stdout_pipe = -1;
+    }
 
     if (foreground) {
         foreground_process_pid = pcb->pid;
@@ -109,6 +135,25 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
         return NULL;
     }
 
+    if (pcb->stdin_pipe >= 0 && pipe_attach_reader(pcb->stdin_pipe) < 0) {
+        free_args(pcb->argv);
+        freeMemory(globalMemoryManager, pcb->stack_base);
+        freeMemory(globalMemoryManager, pcb->name);
+        freeMemory(globalMemoryManager, pcb);
+        return NULL;
+    }
+
+    if (pcb->stdout_pipe >= 0 && pipe_attach_writer(pcb->stdout_pipe) < 0) {
+        if (pcb->stdin_pipe >= 0) {
+            pipe_close_reader(pcb->stdin_pipe);
+        }
+        free_args(pcb->argv);
+        freeMemory(globalMemoryManager, pcb->stack_base);
+        freeMemory(globalMemoryManager, pcb->name);
+        freeMemory(globalMemoryManager, pcb);
+        return NULL;
+    }
+
     pcb->stack_pointer = create_stack(stack_top, entry_point, pcb->argv, &process_wrapper);
 
     pcb->state = READY;
@@ -117,6 +162,7 @@ PCB *create_process(const char *name, int parent_pid, int priority, bool foregro
     snprintf(sem_name, sizeof(sem_name), "sem_%d", pcb->pid);
     pcb->sem_id = (struct Semaphore *)sem_create(0);
     if (!pcb->sem_id) {
+        close_process_io(pcb);
         free_args(pcb->argv);
         freeMemory(globalMemoryManager, pcb->stack_base);
         freeMemory(globalMemoryManager, pcb->name);
@@ -271,6 +317,7 @@ void destroy_process(PCB *pcb) {
         pcb->sem_id = NULL;
     }
 
+    close_process_io(pcb);
     pcb->state = TERMINATED;
     free_args(pcb->argv);
     freeMemory(globalMemoryManager, pcb->name);
@@ -395,6 +442,7 @@ void exit_process() {
         foreground_process_pid = -1;
     }
 
+    close_process_io(current);
     current->state = ZOMBIE;
     sem_post((sem_t)current->sem_id);
 
@@ -412,15 +460,15 @@ void kill_process(int pid) {
         foreground_process_pid = -1;
     }
 
-    if (target->state == ZOMBIE || get_process_by_pid(target->parent_pid) == NULL) {
+    sem_remove_blocked_pid(target->pid);
+    close_process_io(target);
 
+    if (target->state == ZOMBIE || get_process_by_pid(target->parent_pid) == NULL) {
         target->state = TERMINATED;
         remove_active_process(target->pid);
-        destroy_process(target);
     } else {
         target->state = ZOMBIE;
         sem_post((sem_t)target->sem_id);
-
     }
 
 }
@@ -476,4 +524,3 @@ int wait_pid(int pid) {
     kill_process(target->pid);        // Hace cleanup
     return pid;
 }
-

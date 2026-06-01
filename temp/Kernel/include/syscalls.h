@@ -10,7 +10,7 @@ uint64_t syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2
 
 static int64_t sys_read(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t shouldNotBlock);
 
-static void sys_write(uint64_t fd, uint64_t buffer, uint64_t length);
+static int64_t sys_write(uint64_t fd, uint64_t buffer, uint64_t length);
 
 static void sys_write_color(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t color);
 

@@ -11,19 +11,20 @@
 #include <mm_manager.h>
 #include <pipes.h>
 #include <interrupts.h>
+#include <lib.h>
 
 extern const uint64_t registers[17];
 
 static uint64_t sys_mem_data();
 static uint64_t sys_get_io_flags();
+static int uses_canonical_terminal_input(PCB *current);
 
 uint64_t syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5) {
     switch(id) {
         case 0:
             return (uint64_t) sys_read(arg0, arg1, arg2, arg3);
         case 1:
-            sys_write(arg0, arg1, arg2);
-            return 0;
+            return sys_write(arg0, arg1, arg2);
         case 2:
             sys_write_color(arg0, arg1, arg2, arg3);
             return 0;
@@ -142,9 +143,71 @@ int64_t sys_read(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t shouldN
     PCB *current = get_current_process();
     char *buff = (char *)buffer;
     int i = 0;
+    static char terminal_line[512];
+    static int terminal_line_len = 0;
+    static int terminal_line_pos = 0;
+    static int terminal_line_owner = -1;
 
     if (current != NULL && current->stdin_pipe >= 0) {
         return pipe_read(current->stdin_pipe, buff, (unsigned int) length);
+    }
+
+    if (uses_canonical_terminal_input(current)) {
+        if (terminal_line_owner != current->pid) {
+            terminal_line_len = 0;
+            terminal_line_pos = 0;
+            terminal_line_owner = current->pid;
+        }
+
+        while (i < (int) length) {
+            if (terminal_line_pos >= terminal_line_len) {
+                terminal_line_len = 0;
+                terminal_line_pos = 0;
+
+                while (terminal_line_len < (int) sizeof(terminal_line)) {
+                    if (shouldNotBlock && is_keyboard_buffer_empty()) {
+                        return i;
+                    }
+
+                    while (is_keyboard_buffer_empty()) {
+                        _hlt();
+                    }
+
+                    char c = dequeue_keyboard_char();
+                    if ((signed char)c == -1) {
+                        if (terminal_line_len == 0) {
+                            return i;
+                        }
+                        break;
+                    }
+
+                    if (c == '\b') {
+                        if (terminal_line_len > 0) {
+                            terminal_line_len--;
+                            print_stringN(&c, 1);
+                        }
+                        continue;
+                    }
+
+                    terminal_line[terminal_line_len++] = c;
+                    if (c == '\n' || c == '\t' || (c >= ' ' && c < 127)) {
+                        print_stringN(&c, 1);
+                    }
+
+                    if (c == '\n') {
+                        break;
+                    }
+                }
+            }
+
+            if (terminal_line_pos < terminal_line_len) {
+                buff[i++] = terminal_line[terminal_line_pos++];
+            } else {
+                break;
+            }
+        }
+
+        return i;
     }
 
     while (i < (int) length) {
@@ -167,19 +230,32 @@ int64_t sys_read(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t shouldN
     return i;
 }
 
-static void sys_write(uint64_t fd, uint64_t buffer, uint64_t length) {
+static int uses_canonical_terminal_input(PCB *current) {
+    if (current == NULL || current->name == NULL || !current->foreground || current->stdin_pipe >= 0) {
+        return 0;
+    }
+
+    return lib_strcmp(current->name, "cat") == 0 ||
+           lib_strcmp(current->name, "wc") == 0 ||
+           lib_strcmp(current->name, "filter") == 0;
+}
+
+static int64_t sys_write(uint64_t fd, uint64_t buffer, uint64_t length) {
     PCB *current = get_current_process();
 
     if (fd == STDOUT && current != NULL && current->stdout_pipe >= 0) {
-        pipe_write(current->stdout_pipe, (char *) buffer, (unsigned int) length);
-        return;
+        return pipe_write(current->stdout_pipe, (char *) buffer, (unsigned int) length);
     }
 
     if (fd == STDOUT) {
         print_stringN((char *) buffer, length);
+        return (int64_t)length;
     } else if (fd == STDERR) {
         print_string_N_color((char *) buffer, length, RED);
+        return (int64_t)length;
     }
+
+    return -1;
 }
 
 static void sys_write_place(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t x, uint64_t y) {
@@ -196,6 +272,13 @@ static int64_t sys_free_processes_info(uint64_t info) {
 }
 
 static void sys_write_color(uint64_t fd, uint64_t buffer, uint64_t length, uint64_t color) {
+    PCB *current = get_current_process();
+
+    if (fd == STDOUT && current != NULL && current->stdout_pipe >= 0) {
+        pipe_write(current->stdout_pipe, (char *) buffer, (unsigned int) length);
+        return;
+    }
+
     if (fd == STDOUT || fd == STDERR) {
         Color c;
         c.r = (char) color;

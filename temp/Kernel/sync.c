@@ -40,9 +40,55 @@ int sem_close(sem_t sem) {
     if (sem == NULL || !sem->in_use)
         return -1;
 
+    sem_unblock_all(sem);
     sem->in_use = false;
     queue_clear(&sem->blocked_queue);
     return 0;
+}
+
+void sem_unblock_all(sem_t sem) {
+    if (sem == NULL || !sem->in_use) {
+        return;
+    }
+
+    enter_region(&sem->lock);
+    while (!queue_is_empty(&sem->blocked_queue)) {
+        int pid = queue_dequeue(&sem->blocked_queue);
+        unblock_process(pid);
+    }
+    leave_region(&sem->lock);
+}
+
+void sem_remove_blocked_pid(int pid) {
+    for (int i = 0; i < MAX_SEMAPHORES; i++) {
+        Semaphore *sem = &semaphores[i];
+        if (!sem->in_use) {
+            continue;
+        }
+
+        enter_region(&sem->lock);
+        QueueNode *prev = NULL;
+        QueueNode *curr = sem->blocked_queue.front;
+        while (curr != NULL) {
+            if (curr->pid == pid) {
+                QueueNode *to_delete = curr;
+                curr = curr->next;
+                if (prev == NULL) {
+                    sem->blocked_queue.front = curr;
+                } else {
+                    prev->next = curr;
+                }
+                if (sem->blocked_queue.rear == to_delete) {
+                    sem->blocked_queue.rear = prev;
+                }
+                freeMemory(globalMemoryManager, to_delete);
+            } else {
+                prev = curr;
+                curr = curr->next;
+            }
+        }
+        leave_region(&sem->lock);
+    }
 }
 
 static int queue_contains_pid(Queue *q, int pid) {

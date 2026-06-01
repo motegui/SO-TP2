@@ -3,19 +3,47 @@
 
 static Pipe pipe_table[MAX_PIPES];
 
-void init_pipes(){
-    for (int i = 0; i < MAX_PIPES; i++) {
-        pipe_table[i].open = 0;
-        pipe_table[i].eof = 0;
-        pipe_table[i].read_index = 0;
-        pipe_table[i].write_index = 0;
-        pipe_table[i].size = 0;
+static void wake_waiters(sem_t sem) {
+    for (int i = 0; i < MAX_SEMAPHORES; i++) {
+        sem_post(sem);
     }
 }
 
+static void reset_pipe(Pipe *pipe) {
+    pipe->name[0] = '\0';
+    pipe->read_index = 0;
+    pipe->write_index = 0;
+    pipe->size = 0;
+    pipe->open = 0;
+    pipe->readers = 0;
+    pipe->writers = 0;
+    pipe->reader_end_closed = 0;
+    pipe->writer_end_closed = 0;
+    pipe->lock = 0;
+    pipe->filled_slots = NULL;
+    pipe->empty_slots = NULL;
+}
 
-//abre el pipe si existe, y sino lo crea
+static void destroy_if_unused(Pipe *pipe) {
+    if (pipe->open && pipe->readers == 0 && pipe->writers == 0 &&
+        pipe->reader_end_closed && pipe->writer_end_closed) {
+        sem_close(pipe->filled_slots);
+        sem_close(pipe->empty_slots);
+        reset_pipe(pipe);
+    }
+}
+
+void init_pipes(){
+    for (int i = 0; i < MAX_PIPES; i++) {
+        reset_pipe(&pipe_table[i]);
+    }
+}
+
 int pipe_open(const char *name){
+    if (name == NULL) {
+        return -1;
+    }
+
     for (int i = 0; i < MAX_PIPES; i++) {
         if (pipe_table[i].open && lib_strcmp(pipe_table[i].name, name) == 0) {
             return i;
@@ -24,22 +52,23 @@ int pipe_open(const char *name){
 
     for (int i = 0; i < MAX_PIPES; i++) {
         if (!pipe_table[i].open) {
-            lib_strncpy(pipe_table[i].name, name, PIPE_NAME_LEN);
-
-            pipe_table[i].read_index = 0;
-            pipe_table[i].write_index = 0;
-            pipe_table[i].size = 0;
-            pipe_table[i].eof = 0;
-            pipe_table[i].open = 1;
-
-            char filled_name[PIPE_NAME_LEN + 8];
-            char empty_name[PIPE_NAME_LEN + 8];
-            snprintf(filled_name, sizeof(filled_name), "%s_filled", name);
-            snprintf(empty_name, sizeof(empty_name), "%s_empty", name);
-
-            pipe_table[i].filled_slots = sem_create(0);
-            pipe_table[i].empty_slots = sem_create(PIPE_BUFFER_SIZE);
-
+            Pipe *pipe = &pipe_table[i];
+            reset_pipe(pipe);
+            lib_strncpy(pipe->name, name, PIPE_NAME_LEN - 1);
+            pipe->name[PIPE_NAME_LEN - 1] = '\0';
+            pipe->filled_slots = sem_create(0);
+            pipe->empty_slots = sem_create(PIPE_BUFFER_SIZE);
+            if (pipe->filled_slots == NULL || pipe->empty_slots == NULL) {
+                if (pipe->filled_slots != NULL) {
+                    sem_close(pipe->filled_slots);
+                }
+                if (pipe->empty_slots != NULL) {
+                    sem_close(pipe->empty_slots);
+                }
+                reset_pipe(pipe);
+                return -1;
+            }
+            pipe->open = 1;
             return i;
         }
     }
@@ -47,65 +76,157 @@ int pipe_open(const char *name){
     return -1;
 }
 
-int pipe_write(int id, const char *src, unsigned int count){
-    if (id < 0 || id >= MAX_PIPES || !pipe_table[id].open || pipe_table[id].eof) {
-        return -1;
-    }
-
-    Pipe *pipe = &pipe_table[id];
-
-    for (int i = 0; i < count; i++) {
-        sem_wait(pipe->empty_slots);
-
-        pipe->buffer[pipe->write_index] = src[i];
-        pipe->write_index = (pipe->write_index + 1) % PIPE_BUFFER_SIZE;
-        pipe->size++;
-
-        sem_post(pipe->filled_slots);
-    }
-
-    return count;
-}
-
-int pipe_read(int id, char *dest, unsigned int count) {
+int pipe_attach_reader(int id) {
     if (id < 0 || id >= MAX_PIPES || !pipe_table[id].open) {
         return -1;
     }
 
     Pipe *pipe = &pipe_table[id];
+    enter_region(&pipe->lock);
+    if (pipe->reader_end_closed) {
+        leave_region(&pipe->lock);
+        return -1;
+    }
+    pipe->readers++;
+    leave_region(&pipe->lock);
+    return 0;
+}
 
-    for (unsigned int i = 0; i < count; i++) {
-        if (pipe->eof && pipe->size == 0) {
-            return i;
+int pipe_attach_writer(int id) {
+    if (id < 0 || id >= MAX_PIPES || !pipe_table[id].open) {
+        return -1;
+    }
+
+    Pipe *pipe = &pipe_table[id];
+    enter_region(&pipe->lock);
+    if (pipe->writer_end_closed) {
+        leave_region(&pipe->lock);
+        return -1;
+    }
+    pipe->writers++;
+    leave_region(&pipe->lock);
+    return 0;
+}
+
+int pipe_write(int id, const char *src, unsigned int count){
+    if (id < 0 || id >= MAX_PIPES || !pipe_table[id].open || src == NULL) {
+        return -1;
+    }
+
+    Pipe *pipe = &pipe_table[id];
+    unsigned int written = 0;
+
+    while (written < count) {
+        enter_region(&pipe->lock);
+        if (pipe->reader_end_closed) {
+            leave_region(&pipe->lock);
+            return written > 0 ? (int)written : -1;
+        }
+        leave_region(&pipe->lock);
+
+        if (sem_wait(pipe->empty_slots) < 0) {
+            return written > 0 ? (int)written : -1;
         }
 
-        sem_wait(pipe->filled_slots);
-
-        if (pipe->size == 0 && pipe->eof) {
-            return i;
+        enter_region(&pipe->lock);
+        if (pipe->reader_end_closed || !pipe->open) {
+            leave_region(&pipe->lock);
+            sem_post(pipe->empty_slots);
+            return written > 0 ? (int)written : -1;
         }
 
-        dest[i] = pipe->buffer[pipe->read_index];
+        pipe->buffer[pipe->write_index] = src[written++];
+        pipe->write_index = (pipe->write_index + 1) % PIPE_BUFFER_SIZE;
+        pipe->size++;
+        leave_region(&pipe->lock);
+
+        sem_post(pipe->filled_slots);
+    }
+
+    return (int)written;
+}
+
+int pipe_read(int id, char *dest, unsigned int count) {
+    if (id < 0 || id >= MAX_PIPES || !pipe_table[id].open || dest == NULL) {
+        return -1;
+    }
+
+    Pipe *pipe = &pipe_table[id];
+    unsigned int read = 0;
+
+    while (read < count) {
+        enter_region(&pipe->lock);
+        if (pipe->size == 0 && pipe->writer_end_closed) {
+            leave_region(&pipe->lock);
+            return (int)read;
+        }
+        leave_region(&pipe->lock);
+
+        if (sem_wait(pipe->filled_slots) < 0) {
+            return read > 0 ? (int)read : -1;
+        }
+
+        enter_region(&pipe->lock);
+        if (pipe->size == 0) {
+            int done = pipe->writer_end_closed || !pipe->open;
+            leave_region(&pipe->lock);
+            if (done) {
+                return (int)read;
+            }
+            continue;
+        }
+
+        dest[read++] = pipe->buffer[pipe->read_index];
         pipe->read_index = (pipe->read_index + 1) % PIPE_BUFFER_SIZE;
         pipe->size--;
+        leave_region(&pipe->lock);
 
         sem_post(pipe->empty_slots);
     }
 
-    return count;
+    return (int)read;
 }
 
-void pipe_shutdown_write(int id) {
+void pipe_close_reader(int id) {
     if (id < 0 || id >= MAX_PIPES || !pipe_table[id].open) {
         return;
     }
 
     Pipe *pipe = &pipe_table[id];
-    pipe->eof = 1;
-
-    for (int i = 0; i < 64; i++) {
-        sem_post(pipe->filled_slots);
+    enter_region(&pipe->lock);
+    if (pipe->readers > 0) {
+        pipe->readers--;
     }
+    if (pipe->readers == 0) {
+        pipe->reader_end_closed = 1;
+    }
+    leave_region(&pipe->lock);
+
+    wake_waiters(pipe->empty_slots);
+    destroy_if_unused(pipe);
+}
+
+void pipe_close_writer(int id) {
+    if (id < 0 || id >= MAX_PIPES || !pipe_table[id].open) {
+        return;
+    }
+
+    Pipe *pipe = &pipe_table[id];
+    enter_region(&pipe->lock);
+    if (pipe->writers > 0) {
+        pipe->writers--;
+    }
+    if (pipe->writers == 0) {
+        pipe->writer_end_closed = 1;
+    }
+    leave_region(&pipe->lock);
+
+    wake_waiters(pipe->filled_slots);
+    destroy_if_unused(pipe);
+}
+
+void pipe_shutdown_write(int id) {
+    pipe_close_writer(id);
 }
 
 void pipe_close(int id) {
@@ -114,20 +235,21 @@ void pipe_close(int id) {
     }
 
     Pipe *pipe = &pipe_table[id];
-    pipe->eof = 1;
-
-    for (int i = 0; i < 64; i++) {
-        sem_post(pipe->filled_slots);
+    enter_region(&pipe->lock);
+    if (pipe->readers == 0) {
+        pipe->reader_end_closed = 1;
     }
+    if (pipe->writers == 0) {
+        pipe->writer_end_closed = 1;
+    }
+    int no_refs = pipe->readers == 0 && pipe->writers == 0;
+    leave_region(&pipe->lock);
 
-    sem_close(pipe->filled_slots);
-    sem_close(pipe->empty_slots);
-
-    pipe->open = 0;
-
-    pipe->read_index = 0;
-    pipe->write_index = 0;
-    pipe->size = 0;
-    pipe->eof = 0;
-    pipe->name[0] = '\0';
+    if (no_refs) {
+        wake_waiters(pipe->filled_slots);
+        wake_waiters(pipe->empty_slots);
+        sem_close(pipe->filled_slots);
+        sem_close(pipe->empty_slots);
+        reset_pipe(pipe);
+    }
 }

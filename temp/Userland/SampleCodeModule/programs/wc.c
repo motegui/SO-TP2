@@ -1,26 +1,18 @@
-#include <usyscalls.h>
 #include <programs.h>
 #include <userio.h>
 
 int wc(char **args) {
-    print_char('\n');
+    (void) args;
 
     int c;
     int counter = 0;
 
     while ((c = get_char()) != EOF) {
-        if (c == 0x01) {
-            break;
-        }
-
         if (c == '\n') {
-            print_char('\n');
             counter++;
-        } else if (c > 20 && c < 127) {
-            print_char(c);
         }
     }
 
-    printf("\nTotal lines: %d", counter);
+    printf("total lines: %d\n", counter);
     return 0;
 }
