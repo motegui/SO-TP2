@@ -15,9 +15,20 @@ uint64_t schedule(uint64_t current_rsp) {
     PCB *current = get_current_process();
     if (current) {
         save_context(current, current_rsp);
+
         if (is_blocked_by_semaphore(current->pid)) {
             current->state = BLOCKED;
-        } else if (current->state == RUNNING) {
+        }
+
+        // Si el proceso actual todavia puede correr (no se bloqueo ni termino),
+        // le queda quantum y lo dejamos seguir. El quantum es proporcional a la
+        // prioridad, asi los de mayor prioridad reciben mas CPU, pero igual
+        // rotamos round-robin para no matar de hambre a los de menor prioridad.
+        if (current->state == RUNNING || current->state == READY) {
+            if (--quantum_remaining > 0) {
+                current->state = RUNNING;
+                return (uint64_t) current->stack_pointer;
+            }
             current->state = READY;
         }
     }
@@ -28,6 +39,7 @@ uint64_t schedule(uint64_t current_rsp) {
     }
     set_current_process(next);
     next->state = RUNNING;
+    quantum_remaining = next->priority + 1;
 
     return (uint64_t)next->stack_pointer;
 }
@@ -37,7 +49,6 @@ PCB *pick_next_process() {
     if (!head) return NULL;
 
     PCB *best = NULL;
-    int max_priority = -1;
 
     PCB *current = get_current_process();
     PCBNode *current_node = NULL;
@@ -54,11 +65,13 @@ PCB *pick_next_process() {
     PCBNode *start = current_node && current_node->next ? current_node->next : head;
     curr = start;
 
+    // Round-robin: tomamos el primer proceso READY a partir del siguiente al
+    // actual. El peso por prioridad lo da el quantum (ver schedule), no la
+    // seleccion, de modo que ningun proceso queda sin correr.
     do {
-        if (curr->pcb->state == READY && curr->pcb->priority > max_priority) {
+        if (curr->pcb->state == READY) {
             best = curr->pcb;
-            max_priority = curr->pcb->priority;
-
+            break;
         }
         curr = curr->next ? curr->next : head;
 

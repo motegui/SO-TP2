@@ -1,3 +1,4 @@
+#ifndef USE_BUDDY
 #include "mm_manager.h"
 #include <string.h>
 #include <stdint.h>
@@ -119,3 +120,5 @@ void getMemoryData(memoryData *data) {
         data->free = free;
     }
 }
+
+#endif // USE_BUDDY

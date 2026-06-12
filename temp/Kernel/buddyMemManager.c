@@ -3,11 +3,11 @@
 #include "include/lib.h"
 #include <string.h>
 #include <stdint.h>
-#include <assert.h>
 
 #define BUDDY_ALIGNMENT (1UL << MIN_ORDER)
 
 MemoryManagerADT globalMemoryManager = NULL;
+static uint64_t total_memory = 0;
 
 static int is_aligned(void *ptr) {
     return ((uintptr_t)ptr & (BUDDY_ALIGNMENT - 1)) == 0;
@@ -27,7 +27,9 @@ static int get_order(size_t size) {
         order++;
         block_size <<= 1;
     }
-    
+
+    if (block_size < required_size) return -1;
+
     return order;
 }
 
@@ -42,6 +44,7 @@ MemoryManagerADT createMemoryManager(void *const restrict memoryForMemoryManager
     BuddyManager *manager = (BuddyManager *)memoryForMemoryManager;
     manager->base = (char *)managedMemory;
     manager->size = managedSize;
+    total_memory = managedSize;
     lib_memset(manager->free_lists, 0, sizeof(manager->free_lists));
 
     // Find maximum possible order that fits in managedSize
@@ -165,7 +168,7 @@ int freeMemory(MemoryManagerADT const restrict memoryManager,
 void getMemoryStatus(MemoryManagerADT const restrict memoryManager,
                    size_t *used, size_t *free) {
     if (!memoryManager || !used || !free) return;
-    
+
     BuddyManager *manager = (BuddyManager *)memoryManager;
     *free = 0;
     for (int i = MIN_ORDER; i <= MAX_ORDER; i++) {
@@ -176,6 +179,14 @@ void getMemoryStatus(MemoryManagerADT const restrict memoryManager,
         }
     }
     *used = manager->size - *free;
+}
+
+void getMemoryData(memoryData *data) {
+    size_t used, free;
+    getMemoryStatus(globalMemoryManager, &used, &free);
+    data->total = total_memory;
+    data->used = used;
+    data->free = free;
 }
 
 #endif

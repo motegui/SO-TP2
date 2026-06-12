@@ -9,7 +9,7 @@
 #ifdef USE_BUDDY
 
     #define MIN_ORDER 5
-    #define MAX_ORDER 16
+    #define MAX_ORDER 20
 
     typedef struct BuddyBlock {
         struct BuddyBlock *next;

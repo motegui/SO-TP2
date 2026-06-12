@@ -42,10 +42,14 @@ void free(void *ptr) {
     sys_free(ptr);
 }
 
-// Busy wait
+// Busy wait que cede la CPU periodicamente (no en cada iteracion). Asi los
+// procesos se intercalan sin depender de la frecuencia del timer, pero sin
+// generar millones de context switches. El reparto entre los que estan listos
+// lo decide el scheduler segun la prioridad (quantum proporcional).
 void bussy_wait(uint64_t n) {
     for (volatile uint64_t i = 0; i < n; i++) {
-        sys_yield();
+        if ((i & 0x3FFF) == 0)
+            sys_yield();
     }
 }
 
