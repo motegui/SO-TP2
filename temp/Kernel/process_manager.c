@@ -452,7 +452,6 @@ void exit_process() {
 void kill_process(int pid) {
     PCB *target = get_process_by_pid(pid);
     if (!target) {
-        ncPrint("Error: Proceso no encontrado.\n");
         return;
     }
 
@@ -461,16 +460,24 @@ void kill_process(int pid) {
     }
 
     sem_remove_blocked_pid(target->pid);
-    close_process_io(target);
 
-    if (target->state == ZOMBIE || get_process_by_pid(target->parent_pid) == NULL) {
-        target->state = TERMINATED;
-        remove_active_process(target->pid);
-    } else {
+    // Un kill explicito termina el proceso y libera TODOS sus recursos
+    // (PCB, stack, nombre, semaforo) sacandolo de la lista. El estado ZOMBIE
+    // solo se usa para procesos que terminan solos via exit_process y cuyo
+    // padre los espera con wait_pid; si no liberaramos aca, los procesos
+    // matados (cuyo padre no hace wait_pid) quedarian como zombies para
+    // siempre, leakeando memoria y semaforos.
+    if (target == get_current_process()) {
+        // Auto-kill: no podemos liberar el stack sobre el que corremos.
+        // Lo dejamos como zombie y cedemos la CPU; se reapea luego.
+        close_process_io(target);
         target->state = ZOMBIE;
         sem_post((sem_t)target->sem_id);
+        __asm__ volatile("int $0x20");
+        return;
     }
 
+    remove_active_process(target->pid);
 }
 
 

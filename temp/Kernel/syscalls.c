@@ -51,8 +51,7 @@ uint64_t syscallHandler(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2
             sys_toggle_cursor();
             return 0;
         case 11:
-            sys_get_ticks(arg0);
-            return 0;
+            return sys_get_ticks();
         case 12:
             sys_write_place(arg0, arg1, arg2, arg3, arg4);
             return 0;
@@ -344,9 +343,8 @@ static void sys_toggle_cursor() {
     toggle_cursor();
 }
 
-static void sys_get_ticks(uint64_t ticks) {
-    uint32_t * t = (uint32_t *) ticks;    
-    *t = ticks_elapsed();
+static uint64_t sys_get_ticks(void) {
+    return (uint64_t) ticks_elapsed();
 }
 
 static void sys_draw_image(uint64_t image, uint64_t width, uint64_t height) {

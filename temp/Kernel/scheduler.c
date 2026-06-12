@@ -2,6 +2,7 @@
 #include "process_manager.h"
 #include "sync.h"
 #include <videodriver.h>
+#include <time.h>
 
 #define DEFAULT_QUANTUM 5
 
@@ -12,6 +13,7 @@ void save_context(PCB *pcb, uint64_t rsp) {
 }
 
 uint64_t schedule(uint64_t current_rsp) {
+    timer_handler();
     PCB *current = get_current_process();
     if (current) {
         save_context(current, current_rsp);

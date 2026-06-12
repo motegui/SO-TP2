@@ -170,3 +170,12 @@ make clean && make all
 make clean && make all
 make clean && make all
 make clean && make all
+cd root
+cd temp
+ make clean && make all && make buddy
+ make clean && make all && make buddy
+ make clean && make all && make buddy
+ make clean && make all && make buddy
+ make clean && make all && make buddy
+ make clean && make all
+./run.sh serial

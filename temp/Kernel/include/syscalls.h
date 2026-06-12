@@ -32,7 +32,7 @@ static void sys_get_screensize(uint64_t width, uint64_t height);
 
 static void sys_toggle_cursor();
 
-static void sys_get_ticks(uint64_t ticks);
+static uint64_t sys_get_ticks(void);
 
 static void sys_draw_image(uint64_t image, uint64_t width, uint64_t height);
 
