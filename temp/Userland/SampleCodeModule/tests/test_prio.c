@@ -3,7 +3,7 @@
 #include "test_util.h"
 
 #define MINOR_WAIT 1000000
-#define WAIT 10000000
+#define WAIT 100000000
 
 #define TOTAL_PROCESSES 3
 #define LOWEST 0
@@ -12,7 +12,7 @@
 
 int64_t prio[TOTAL_PROCESSES] = {LOWEST, MEDIUM, HIGHEST};
 
-static char prio_wait_arg[] = "100000";
+static char prio_wait_arg[] = "1000000";
 
 int64_t test_prio(uint64_t argc, char *argv[]) {
     (void) argc;

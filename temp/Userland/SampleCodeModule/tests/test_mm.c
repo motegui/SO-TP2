@@ -29,8 +29,6 @@ uint64_t test_mm(int argc, char *argv[]) {
     rq = 0;
     total = 0;
 
-    // Request  sys_write(1, "entro\n", 8);
-
     while (rq < MAX_BLOCKS && total < max_memory) {
       mm_rqs[rq].size = GetUniform(max_memory - total - 1) + 1;
       mm_rqs[rq].address = sys_malloc(mm_rqs[rq].size);

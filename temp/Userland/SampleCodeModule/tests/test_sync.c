@@ -17,7 +17,10 @@ int64_t global;
 
 void slowInc(int64_t *p, int64_t inc) {
     uint64_t aux = *p;
-    sys_yield(); 
+    int a = sys_get_pid();
+    for(int i = 0; i < 10000 * a; i++ ){
+        
+    }
     aux += inc;
     *p = aux;
 }

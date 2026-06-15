@@ -48,8 +48,8 @@ void free(void *ptr) {
 // lo decide el scheduler segun la prioridad (quantum proporcional).
 void bussy_wait(uint64_t n) {
     for (volatile uint64_t i = 0; i < n; i++) {
-        if ((i & 0x3FFF) == 0)
-            sys_yield();
+        //if ((i & 0x3FFF) == 0)
+           // sys_yield();
     }
 }
 
@@ -62,7 +62,7 @@ void endless_loop() {
 
 // Endless loop con print de PID
 uint64_t endless_loop_print(uint64_t argc, char *argv[]) {
-    uint64_t wait = 100000;
+    uint64_t wait = 10000000;
     if (argc > 0 && argv[0] != NULL) {
         int64_t w = satoi(argv[0]);
         if (w > 0) {
@@ -89,10 +89,10 @@ uint64_t endless_loop_print(uint64_t argc, char *argv[]) {
             buffer[i] = buffer[len - 1 - i];
             buffer[len - 1 - i] = c;
         }
-        buffer[len++] = '\n';
+        buffer[len++] = ' ';
         sys_write(1, buffer, len);
         bussy_wait(wait);
-        sys_yield();
+        //sys_yield();
     }
     return 0;
 }
