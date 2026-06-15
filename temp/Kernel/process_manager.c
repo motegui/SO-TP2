@@ -284,7 +284,7 @@ void freeProcessesInfo(processInfo **info) {
 
 void print_active_processes() {
     PCBNode *curr = active_processes;
-    const char *state_str[] = {"NEW", "READY", "RUNNING", "BLOCKED", "ZOMBIE", "TERMINATED"};
+    const char *state_str[] = {"NEW", "READY", "RUNNING", "BLOCKED", "TERMINATED", "ZOMBIE"};
 
     ncPrint("PID\tNombre\t\tEstado\t\tPrioridad\tFG/BG\n");
     while (curr) {
@@ -498,11 +498,11 @@ void list_processes(char *buffer, uint64_t length) {
 
     while (curr && offset < (int)length - 1) {
         PCB *pcb = curr->pcb;
-        const char *state = (pcb->state >= 0 && pcb->state <= 6) ? state_str[pcb->state] : "UNKNOWN";
+        const char *state = (pcb->state >= 0 && pcb->state <= ZOMBIE) ? state_str[pcb->state] : "UNKNOWN";
         int written = snprintf(
             buffer + offset, length - offset,
-            "PID: %d, Name: %s, State: %s, Priority: %d\n",
-            pcb->pid, pcb->name, state, pcb->priority
+            "PID: %d, Name: %s, State: %s, Priority: %d, %s\n",
+            pcb->pid, pcb->name, state, pcb->priority, pcb->foreground ? "FG" : "BG"
         );
         if (written < 0 || written >= (int)(length - offset)) {
             buffer[length - 1] = '\0';

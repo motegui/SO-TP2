@@ -114,11 +114,13 @@ void shell() {
 
 	char flag = 0; // Used for up arrow
 	while(1) {
-		int c = get_char();
-		if (c == EOF) {
-			printColor("\n[Shell] EOF recibido. Cerrando shell...\n", RED);
-			return;
-		} else if (c == 3) { // Ctrl+C
+			int c = get_char();
+			if (c == EOF) {
+				printColor("\nHomerOS: $> ", GREEN);
+				count = 0;
+				buffer[0] = 0;
+				continue;
+			} else if (c == 3) { // Ctrl+C
 			if (mvar_is_running()) {
 				mvar_force_stop();
 				printColor("\n[Shell] Ctrl+C: mvar detenido\n", RED);

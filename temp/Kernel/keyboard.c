@@ -42,6 +42,17 @@ char is_letter(unsigned char key) {
     return (c >= 'a' && c <= 'z');
 }
 
+static void enqueue_keyboard_char(char c) {
+    if (elem_count >= BUFFER_SIZE)
+        return;
+
+    if (write_index >= BUFFER_SIZE)
+        write_index = 0;
+
+    buffer[write_index++] = c;
+    elem_count++;
+}
+
 void keyboard_handler() {
     unsigned char key = getKey();
 
@@ -71,34 +82,28 @@ void keyboard_handler() {
     }
 
     if (key < 83) {
-        if (elem_count >= BUFFER_SIZE)
-            return;
-
-        if (write_index >= BUFFER_SIZE)
-            write_index = 0;
-
         char c = charHexMap[key];
 
         if (ctrl_pressed) {
             if (c == 'd') {
-                buffer[write_index++] = -1;  // EOF
-                elem_count++;
+                enqueue_keyboard_char(-1);  // EOF
                 return;
             } else if (c == 'c') {
                 int fg_pid = get_foreground_pid(); 
-                if (fg_pid > 0)
+                if (fg_pid > 0) {
                     kill_process(fg_pid);
+                } else {
+                    enqueue_keyboard_char(3);
+                }
                 return;
             }
         }
 
-        buffer[write_index++] = !is_letter(key)
+        enqueue_keyboard_char(!is_letter(key)
             ? (shift_pressed ? charCapsHexMap[key] : charHexMap[key])
             : ((shift_pressed && !caps_locked) || (!shift_pressed && caps_locked))
                 ? charCapsHexMap[key]
-                : charHexMap[key];
-
-        elem_count++;
+                : charHexMap[key]);
     }
 }
 

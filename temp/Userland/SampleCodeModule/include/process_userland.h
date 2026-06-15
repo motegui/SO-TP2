@@ -8,11 +8,12 @@
 #include <usyscalls.h>
 #include <uStrings.h>
 
-#define READY   0
-#define BLOCKED 1
+#define NEW     0
+#define READY   1
 #define RUNNING 2
-#define ZOMBIE  3
+#define BLOCKED 3
 #define DEAD    4
+#define ZOMBIE  5
 
 
 typedef struct memoryData {

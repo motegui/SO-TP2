@@ -19,13 +19,16 @@ int processesInfo() {
 	}
 	printfColor("\n\nProcesses info:\n", YELLOW);
 	int i = 0;
-	printColor("  PID\tPriority\tParent\tForeground\tStatus\t  Name\n", CYAN);
+	printColor("  PID\tPriority\tParent\tFG/BG\t\tStatus\t  Name\n", CYAN);
 	while (processesInfo[i] != NULL) {
 		printf("   %d", processesInfo[i]->pid);
 		printf(processesInfo[i]->pid > 9 ? "    \t%d" : "     \t%d", processesInfo[i]->priority);
 		printf("\t\t %d", processesInfo[i]->parent);
-		printf("\t\t  %d", processesInfo[i]->foreground);
+		printf("\t\t  %s", processesInfo[i]->foreground ? "FG" : "BG");
 		switch (processesInfo[i]->status) {
+			case NEW:
+				printf("\t    New   ");
+				break;
 			case READY:
 				printf("\t    Ready ");
 				break;
