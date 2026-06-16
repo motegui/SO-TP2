@@ -56,7 +56,8 @@ int processesInfo() {
 	return 0;
 }
 
-int killProcess(char ** argv) {
+int killProcess(int argc, char ** argv) {
+	(void) argc;
 	if (argv[1] == 0) {
 		printfColor("\n\nNo process id specified\n", RED);
 		return 1;
@@ -71,7 +72,8 @@ int killProcess(char ** argv) {
 	return 0;
 }
 
-int blockProcess(char ** argv) {
+int blockProcess(int argc, char ** argv) {
+	(void) argc;
 	if (argv[1] == 0) {
 		printfColor("\n\nNo process id specified\n", RED);
 		return 1;
@@ -86,7 +88,8 @@ int blockProcess(char ** argv) {
 	return 0;
 }
 
-int unblockProcess(char ** argv) {
+int unblockProcess(int argc, char ** argv) {
+	(void) argc;
 	if (argv[1] == 0) {
 		printfColor("\n\nNo process id specified\n", RED);
 		return 1;
@@ -101,7 +104,8 @@ int unblockProcess(char ** argv) {
 	return 0;
 }
 
-int changePriority(char ** argv) {
+int changePriority(int argc, char ** argv) {
+	(void) argc;
 	if (argv[1] == 0) {
 		printfColor("\n\nNo process id specified\n", RED);
 		return 1;

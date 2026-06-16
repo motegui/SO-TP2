@@ -185,5 +185,5 @@ int64_t sys_free_processes_info(ProcessInfoPtr * info) {
 }
 
 int64_t sys_change_priority(int pid, int new_priority) {
-	return sys_call((uint64_t) 40, (uint64_t) pid, (uint64_t) new_priority, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+	return sys_call((uint64_t) 19, (uint64_t) pid, (uint64_t) new_priority, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }

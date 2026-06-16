@@ -34,10 +34,10 @@ typedef struct processInfo {
 
 void memInfo();
 int processesInfo();
-int blockProcess(char ** argv);
-int unblockProcess(char ** argv);
-int changePriority(char ** argv);
+int blockProcess(int argc, char ** argv);
+int unblockProcess(int argc, char ** argv);
+int changePriority(int argc, char ** argv);
 void yield();
-int killProcess(char ** argv);
+int killProcess(int argc, char ** argv);
 
 #endif  // STRUCTS_H
