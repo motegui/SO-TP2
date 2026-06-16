@@ -517,21 +517,36 @@ int analizeBuffer(char * buffer, int count, int piped, int * fds) {
 	else if (commandMatch(buffer, "mvar", count)) {
 		char * args[4];
 		parse_command(args, buffer, 4);
-		if (args[1] != NULL) {
-			if (args[2] == NULL && !commandMatch(args[1], "stop", 4)) {
-				args[2] = args[1];
-				args[3] = NULL;
-			}
-			int pid = sys_create_process("mvar", 0, !background, &mvar, args);
-			int ret = wait(pid, piped, background);
-			if (mvar_is_running()) {
-				mvar_force_stop();
-			}
-			return ret;
-		} else {
+
+		if (args[1] == NULL) {
 			printColor("Usage: mvar <writers> [readers] | mvar stop\n", RED);
 			return -1;
 		}
+
+		if (args[2] == NULL && !commandMatch(args[1], "stop", 4)) {
+			args[2] = args[1];
+			args[3] = NULL;
+		}
+
+		int pid = sys_create_process("mvar", 0, !background, &mvar, args);
+		if (pid <= 0) {
+			printColor("Error: no se pudo crear el proceso\n", RED);
+			return -1;
+		}
+
+		if (!piped && !background) {
+			sys_wait_pid(pid);
+			while (mvar_is_running()) {
+				if (get_char_no_block() == 3) {
+					mvar_force_stop();
+					printColor("\n[Shell] Ctrl+C: mvar detenido\n", RED);
+					break;
+				}
+				sys_yield();
+			}
+		}
+
+		return pid;
 	}
 
 	// Default: command not found

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <programs.h>
+#include <colors.h>
 
 #define MAX_PROCESSES 20
 #define MVAR_EMPTY "mvar_empty"
@@ -12,8 +13,9 @@
 static int writer_pids[MAX_PROCESSES];
 static int reader_pids[MAX_PROCESSES];
 static char writer_id_args[MAX_PROCESSES][5];
+static char reader_id_args[MAX_PROCESSES][5];
 static char *writer_args[MAX_PROCESSES][3];
-static char *reader_args[MAX_PROCESSES][2];
+static char *reader_args[MAX_PROCESSES][3];
 
 static uint64_t empty_sem = 0;
 static uint64_t full_sem = 0;
@@ -21,6 +23,13 @@ static uint64_t mutex_sem = 0;
 
 static volatile char shared_value = 0;
 static volatile int mvar_running = 0;
+
+static const uint64_t reader_colors[MAX_PROCESSES] = {
+    CYAN, GREEN, YELLOW, ORANGE, RED,
+    BLUE, WHITE, 0xFF00FF, 0x00FFAA, 0xAAFF00,
+    0xFFAA00, 0xAA00FF, 0x00AAFF, 0xFF0055, 0x55FF00,
+    0x0055FF, 0xFFFF55, 0x55FFFF, 0xFF55FF, 0xAAAAAA
+};
 
 static uint64_t string_hash(const char *str) {
     uint64_t hash = 5381;
@@ -148,8 +157,12 @@ int writer_main(int argc, char **argv) {
 }
 
 int reader_main(int argc, char **argv) {
-    (void) argc;
-    (void) argv;
+    if (argc < 2) {
+        return -1;
+    }
+
+    int id = str_to_int(argv[1]);
+    uint64_t color = reader_colors[id % MAX_PROCESSES];
 
     while (mvar_running) {
         sleep_cycles(get_random_sleep(40));
@@ -168,7 +181,7 @@ int reader_main(int argc, char **argv) {
         sys_sem_post(mutex_sem);
         sys_sem_post(empty_sem);
 
-        sys_write(1, &value, 1);
+        sys_write_color(1, &value, 1, color);
     }
 
     return 0;
@@ -228,8 +241,10 @@ int mvar(int argc, char **argv) {
     }
 
     for (int i = 0; i < num_readers_arg; i++) {
+        int_to_str(i, reader_id_args[i]);
         reader_args[i][0] = "reader";
-        reader_args[i][1] = NULL;
+        reader_args[i][1] = reader_id_args[i];
+        reader_args[i][2] = NULL;
         reader_pids[i] = sys_create_process("reader", 1, 0, (void *) reader_main, reader_args[i]);
         if (reader_pids[i] <= 0) {
             stop_mvar_processes();
@@ -238,12 +253,6 @@ int mvar(int argc, char **argv) {
         }
     }
 
-    sys_write(1, "\nmvar: A/B en pantalla. Ctrl+C para detener.\n", 44);
-    sys_nice_process(sys_get_pid(), 0);
-
-    while (mvar_running) {
-        sys_yield();
-    }
-
+    sys_write(1, "\nmvar: cada lector imprime con distinto color. Use mvar stop para detener.\n", 72);
     return 0;
 }

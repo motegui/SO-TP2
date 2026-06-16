@@ -48,7 +48,7 @@ int64_t test_processes(uint64_t argc, char *argv[]) {
     while (1) {
         for (rq = 0; rq < max_processes; rq++) {
             p_rqs[rq].pid = (int32_t) sys_create_process("test_process", 0, 0,
-                (void *) endless_loop_print, argvAux);
+                (void *) endless_loop, argvAux);
             if (p_rqs[rq].pid <= 0) {
                 sys_write(1, "test_processes: ERROR creating process\n", 39);
                 return -1;
