@@ -492,6 +492,12 @@ int analizeBuffer(char * buffer, int count, int piped, int * fds) {
 		return wait(pid, piped, background);
 	}
 
+	else if (commandMatch(buffer, "head", count)) {
+		char * args[] = {"head", NULL};
+		int pid = sys_create_process("head", 1, !background, &head, args);
+		return wait(pid, piped, background);
+	}
+
 	// WC
 	else if (commandMatch(buffer, "wc", count)) {
 		char * args[] = {"wc", NULL};

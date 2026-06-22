@@ -5,6 +5,7 @@
 int cat(char ** args);
 int wc(char **args);
 int filter(int argc, char **argv);
+int head(char ** args);
 
 int mvar(int argc, char **argv);
 int mvar_is_running(void);
