@@ -286,9 +286,8 @@ void analyze_piped_command(char *buffer, int count) {
         sys_close_pipe(pipe_fd);
         return;
     }
-
-    sys_wait_pid(pid1);
     sys_wait_pid(pid2);
+	sys_kill_process(pid1);
     sys_close_pipe(pipe_fd);
 }
 
